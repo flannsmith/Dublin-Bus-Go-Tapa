@@ -1,0 +1,69 @@
+<!doctype html>
+{% load static %}
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+                         
+        <!-- Style Sheets -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+        <link href='http://fonts.googleapis.com/css?family=Cookie' rel='stylesheet' type='text/css'>
+        <link href='https://fonts.googleapis.com/css?family=Nova Flat' rel='stylesheet'>
+        <link rel="stylesheet" href="{% static 'css/headerStyles.css' %}">
+        <link rel="stylesheet" href="{% static 'css/stylesheet1.css' %}">
+                                                      
+        <!-- jQuery library -->
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+                                                              
+        <!-- Popper JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+                                                                      
+        <!-- Latest compiled JavaScript -->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+        <title>Dublin Bus</title>
+    
+    </head>
+    <body>        
+        <header class="header-user-dropdown">
+            <div class="header-limiter">
+                <h1><a href="#">Company<span>logo</span></a></h1>
+                <nav>      
+                    <a href="#">Overview</a>
+                    <a href="#">Surveys</a>
+                    <a href="#">Reports</a>
+                    <a href="#">Roles <span class="header-new-feature">new</span></a>
+                </nav>
+                <div class="header-user-menu">
+                     
+                    <ul>        
+                        <li><a href="#">Settings</a></li>
+                        <li><a href="#">Payments</a></li>
+                        <li><a href="#" class="highlight">Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+                                                                                                                                                                                                                                                                                                                                                                             
+        {% block main %}{% endblock %}
+       
+        <script>
+
+        $(document).ready(function(){
+            var userMenu = $('.header-user-dropdown .header-user-menu');
+            userMenu.on('touchend', function(e){
+                userMenu.addClass('show');
+                e.preventDefault();
+                e.stopPropagation();
+            });
+            });
+            // This code makes the user dropdown work on mobile devices
+            $(document).on('touchend', function(e){
+
+                // If the page is touched anywhere outside the user menu, close it
+                userMenu.removeClass('show');
+            });
+        </script>
+        
+      </body>
+</html>

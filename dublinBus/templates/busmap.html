@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+{% block main %}
+
+    <div id="app" class = "container-fluid" style="width:100%">
+        <div class = "row" style="height:10%">
+        <div class = col-lg-11>
+            <h2>Team <span style="color:yellow;">"</span>Dublin Bus switch to <span style="color:blue">electric</span> 2018<span style="color:yellow;">"</span></h2>
+        </div>
+        <div class = col-lg-1>
+            <a href="/">About</a>
+        </div>
+    </div>
+    <div class = "row" style="height:90%">
+        <div class="col-lg-3" style="overflow-y:auto;height:90%;" id="scrollbar"></div>
+        <div class="col-lg-9" id="map_container">
+            <div id="map"></div>
+         
+            <!-- Latest compiled JavaScript -->
+            <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>          
+            <script src="{% static 'js/stops.js' %}"></script>
+            <script src="{% static 'js/trimmed_routes.js' %}"></script>
+            <script src="{% static 'js/stops_trimmed.js' %}"></script>
+            <script src="{% static 'js/stops-routes.js' %}"></script>
+            <script src="{% static 'js/mapscript.js' %}"></script>
+        
+     
+          <script async defer src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyDjRsP2Z4JM86ag3hkbRMmfS1a72YBlD8w&callback=initMap"></script>
+        </div>
+    </div>
+</div>
+{% endblock %}

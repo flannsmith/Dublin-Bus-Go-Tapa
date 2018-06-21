@@ -1,0 +1,45 @@
+<head>
+    <title>Simple Map</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <!-- Latest compiled and minified CSS -->
+    <!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<!-- Popper JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>
+	{% load static %}
+    <script src="{% static "js/trimmed_routes.js" %}"></script>
+    <script src="{% static "js/heatmap.js" %}"></script>
+    <script src="{% static "js/reduced-traffic-map.js" %}"></script>    
+    <script src="{% static "js/stops_trimmed.js" %}"></script>
+    <script src="{% static "js/stops-routes.js" %}"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyDjRsP2Z4JM86ag3hkbRMmfS1a72YBlD8w&callback=initMap"></script>
+
+
+  </head>
+
+<body>
+<div id="map" style = "height:100%"></div></div>
+</div>
+
+</body>
