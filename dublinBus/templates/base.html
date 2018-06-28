@@ -7,7 +7,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
                          
         <!-- Style Sheets -->
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
         <link href='http://fonts.googleapis.com/css?family=Cookie' rel='stylesheet' type='text/css'>
         <link href='https://fonts.googleapis.com/css?family=Nova Flat' rel='stylesheet'>
         <link rel="stylesheet" href="{% static 'css/headerStyles.css' %}">
@@ -25,7 +25,7 @@
     
     </head>
     <body>        
-        <header class="header-user-dropdown">
+       <!-- <header class="header-user-dropdown">
             <div class="header-limiter">
                 <h1><a href="#">Company<span>logo</span></a></h1>
                 <nav>      
@@ -43,11 +43,11 @@
                     </ul>
                 </div>
             </div>
-        </header>
+        </header> -->
                                                                                                                                                                                                                                                                                                                                                                              
         {% block main %}{% endblock %}
        
-        <script>
+       <!-- <script>
 
         $(document).ready(function(){
             var userMenu = $('.header-user-dropdown .header-user-menu');
@@ -63,7 +63,7 @@
                 // If the page is touched anywhere outside the user menu, close it
                 userMenu.removeClass('show');
             });
-        </script>
+        </script> -->
         
       </body>
 </html>
