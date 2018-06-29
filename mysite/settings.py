@@ -82,7 +82,7 @@ DATABASES = {
         'USER': 'dublinbus',
         'PASSWORD': 'Ucd4dogs!',
         'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'PORT': '3333',
     }
 }
 
