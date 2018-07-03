@@ -11,8 +11,8 @@ export default class Main extends React.Component {
  }
 
   toggleNavBar() {
-    this.setState({sidebarOpen: !this.state.sidebarOpen});
-    console.log(this.state.sidebarOpen);
+    // funtion to toggle nav bar, this function is passed as a prop to the <MapContainer> component
+    this.setState({sidebarOpen: !this.state.sidebarOpen}); //toggles sidebarOpen value
   }
 
   render() {

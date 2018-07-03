@@ -2,7 +2,7 @@ import React from "react"
 
 export default class Nav extends React.Component {
   render() {
-
+    //styles defined here
     let styles = {
       menu: {
         width: '100%',
