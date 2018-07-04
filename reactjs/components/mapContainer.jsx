@@ -183,7 +183,7 @@ requestLocation(){
 
     return (
       <div style={styles.mapContainer} >
-        <button type="button" className="btn btn-outline-secondary" onClick={this.props.onClick} style={styles.button}></button> {/*button to hide/display nav side bar*/}
+        <button type="button" className="btn btn-outline-secondary" onClick={this.props.onClick} style={styles.button}></button>
         <div className="container">
           <div className="row">
             <div className="col-sm-12">
@@ -217,7 +217,7 @@ requestLocation(){
         </div>
       </div>
     </div>
-        {/*Google Map componet*/}
+
         <Map
           google={this.props.google}
           zoom={14}
@@ -227,15 +227,13 @@ requestLocation(){
           }}
           center={this.state.center}
           onClick={this.onMapClicked}>
-          {/* {markers} */} {/* <-- Un-comment this to display all stops to map */}
-          {/* Marker to display current location */}
+          {/* {markers} */}
           <Marker
             position={this.state.locationCoordinates}
             title="Location"
             name="You are Here"
             onClick={this.onMarkerClick}
           />
-          {/* Marker to display location search result */}
           <Marker
             position={this.state.center}
             title={this.state.searchName}
@@ -258,3 +256,4 @@ export default GoogleApiWrapper({
   apiKey: "AIzaSyAyesbQMyKVVbBgKVi2g6VX7mop2z96jBo",
   v: "3.30"
 })(MapContainer);
+

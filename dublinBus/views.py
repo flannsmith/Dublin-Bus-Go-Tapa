@@ -7,6 +7,12 @@ from dbanalysis.network import linear_network
 from dbanalysis.stop_tools import stop_getter
 network = linear_network.bus_network()
 s_getter = stop_getter()
+use_DJIKSTRA = True
+if use_DJIKSTRA:
+    for n in network.nodes:
+        network.nodes[n].get_foot_links()
+        network.nodes[n].all_links = set([i for i in network.nodes[n].get_links() if i in network.nodes] + [i for i in network.nodes[n].foot_links if i in network.nodes])
+
 import datetime
 
 def about(request):
@@ -92,3 +98,72 @@ def get_route_shape(request,routename,vari=0):
     stops.append({'stop_id':route[-1],'coords':s_getter.get_stop_coords(route[-1])})
     obj = {'route':routename, 'stops':stops,'shape':coords}
     return JsonResponse(obj, safe=False)
+
+
+def djikstra(request, origin,destination,starttime):
+
+    global network
+    origin = str(origin)
+    destination=str(destination)
+    g=network
+    from math import inf
+    for n in g.nodes:
+        g.nodes[n].weight=inf
+        g.nodes[n].back_links=[]
+    current_node = origin
+    g.nodes[origin].weight = starttime
+    current_time = starttime
+    visited = []
+    to_visit = [current_node]
+    count = 0
+    while len(to_visit) > 0 and current_node != destination:
+        node = g.nodes[current_node]
+        links=g.nodes[current_node].all_links
+        for link in links:
+            if link in g.nodes[current_node].get_links() and\
+                            hasattr(g.nodes[current_node].timetable,'data'):
+
+                try:
+                    time = g.nodes[current_node].timetable.get_next_departure(link,current_time)
+                    if time < g.nodes[link].weight:
+                        g.nodes[link].weight = time
+                        g.nodes[link].back_links.append(current_node)
+                        if link not in to_visit:
+                            to_visit.append(link)
+
+                except:
+                    pass
+
+            elif link in g.nodes[current_node].foot_links:
+                time = g.nodes[current_node].foot_links[link] + current_time
+                if time < g.nodes[link].weight:
+                    g.nodes[link].weight = time
+                    g.nodes[link].back_links.append(current_node)
+                    if link not in to_visit:
+                        to_visit.append(link)
+
+        to_visit.remove(current_node)
+        minimum = inf
+        current_node = None
+        for node in to_visit:
+            if g.nodes[node].weight < minimum:
+                minimum = g.nodes[node].weight
+                current_node = node
+                current_time = g.nodes[node].weight
+    weight = g.nodes[destination].weight
+    cur_node = destination
+    resp = []
+    import json
+    stops_dict = json.loads(open('/home/student/dbanalysis/dbanalysis/resources/stops_trimmed.json','r').read())
+    while weight > starttime:
+        minweight = inf
+        for link in g.nodes[cur_node].back_links:
+            if g.nodes[link].weight < minweight:
+                minweight=g.nodes[link].weight
+                new_curnode = link
+                weight = minweight
+        resp.append({new_curnode:stops_dict[new_curnode]})
+        cur_node = new_curnode
+        weight = minweight     
+    
+    return JsonResponse(resp,safe=False)
