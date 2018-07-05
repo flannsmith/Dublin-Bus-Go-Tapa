@@ -5,10 +5,12 @@ from dublinBus.models import *
 from django.http import JsonResponse
 from dbanalysis.network import linear_network
 from dbanalysis.stop_tools import stop_getter
+
 network = linear_network.bus_network()
 s_getter = stop_getter()
-use_DJIKSTRA = True
+use_DJIKSTRA = False
 if use_DJIKSTRA:
+    import heapq
     for n in network.nodes:
         network.nodes[n].get_foot_links()
         network.nodes[n].all_links = set([i for i in network.nodes[n].get_links() if i in network.nodes] + [i for i in network.nodes[n].foot_links if i in network.nodes])
@@ -101,7 +103,9 @@ def get_route_shape(request,routename,vari=0):
 
 
 def djikstra(request, origin,destination,starttime):
-
+    """
+    Run djikstra's algorithm on graph, using the predicted time tables.
+    """
     global network
     origin = str(origin)
     destination=str(destination)
@@ -114,9 +118,11 @@ def djikstra(request, origin,destination,starttime):
     g.nodes[origin].weight = starttime
     current_time = starttime
     visited = []
-    to_visit = [current_node]
+    to_visit = []
+    heapq.heappush(tovisit,[0,current_node])
     count = 0
     while len(to_visit) > 0 and current_node != destination:
+        #potential to run forever here, having changed to_visit into a heap
         node = g.nodes[current_node]
         links=g.nodes[current_node].all_links
         for link in links:
@@ -129,7 +135,8 @@ def djikstra(request, origin,destination,starttime):
                         g.nodes[link].weight = time
                         g.nodes[link].back_links.append(current_node)
                         if link not in to_visit:
-                            to_visit.append(link)
+                            heapq.heappush(to_visit,[time,link])
+                            
 
                 except:
                     pass
@@ -140,21 +147,22 @@ def djikstra(request, origin,destination,starttime):
                     g.nodes[link].weight = time
                     g.nodes[link].back_links.append(current_node)
                     if link not in to_visit:
-                        to_visit.append(link)
+                        heapq.heappush(to_visit,[time,link])
+                        
 
-        to_visit.remove(current_node)
+        
         minimum = inf
         current_node = None
-        for node in to_visit:
-            if g.nodes[node].weight < minimum:
-                minimum = g.nodes[node].weight
-                current_node = node
-                current_time = g.nodes[node].weight
+        x = heapq.heappop(to_visit)
+        current_time = x[0]
+        current_node = x[1]
+
     weight = g.nodes[destination].weight
     cur_node = destination
     resp = []
     import json
     stops_dict = json.loads(open('/home/student/dbanalysis/dbanalysis/resources/stops_trimmed.json','r').read())
+    #back track to find the shortest path
     while weight > starttime:
         minweight = inf
         for link in g.nodes[cur_node].back_links:
