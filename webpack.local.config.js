@@ -10,6 +10,11 @@ config.entry = {
         'webpack/hot/only-dev-server',
         './reactjs/App1',
     ],
+    JourneyPlanner: [
+        'webpack-dev-server/client?http://' + ip + ':3000',
+        'webpack/hot/only-dev-server',
+        './reactjs/JourneyPlanner',
+    ],
 }
 
 config.output.publicPath = 'http://' + ip + ':3000' + '/assets/bundles/'

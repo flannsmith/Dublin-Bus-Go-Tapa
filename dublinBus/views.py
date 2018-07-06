@@ -20,6 +20,9 @@ import datetime
 def about(request):
     return render(request,'about.html',{})
 
+def journeyPlanner(request):
+    return render(request,'journeyPlanner.html',{})
+
 def map_reader(request):
     return render(request, 'busmap.html',{})
 

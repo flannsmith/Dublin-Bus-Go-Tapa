@@ -5,3 +5,6 @@ for filename in os.listdir('/home/student/ResearchPracticum/django/dublinBus/sta
 
     if filename[0:4] == 'App1':
         call(['mv',directory+'/'+ filename, directory+'/'+'App1.js'])
+
+    if filename[0:14] == 'JourneyPlanner':
+        call(['mv',directory+'/'+ filename, directory+'/'+'JourneyPlanner.js'])
