@@ -1,4 +1,5 @@
 import React from "react"
+import Form from "../components/form"
 
 export default class Nav extends React.Component {
   render() {
@@ -7,15 +8,20 @@ export default class Nav extends React.Component {
       menu: {
         width: '100%',
         position: 'relative',
-        paddingLeft: '25%'
+        margin: '0',
+        paddingTop: '1px',
+        paddingBottom: '10px',
+        backgroundColor: '#46494b',
+        color: 'white',
       },
       sidebar: {
         height: '100%',
         width: '25%',
         transition: 'left .3s ease-in-out',
-        backgroundColor: 'blue',
-          display: this.props.display ? 'inline-block' : 'none',
-        float: 'left'
+        backgroundColor: '#65696c',
+        display: this.props.display ? 'inline-block' : 'none',
+        float: 'left',
+        textAlign: 'center'
       }
     }
     return (
@@ -23,8 +29,13 @@ export default class Nav extends React.Component {
         <div style={styles.menu}>
           <h2>Menu</h2>
         </div>
+        <div style={styles.menu}>
+          <h2>Journey Planner</h2>
+          <Form submit={this.props.submit} input={this.props.input} />
+        </div>
 
       </nav>
     )
   }
 }
+

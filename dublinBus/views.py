@@ -134,8 +134,9 @@ def djikstra(request, origin,destination,starttime):
                     if time < g.nodes[link].weight:
                         g.nodes[link].weight = time
                         g.nodes[link].back_links.append(current_node)
-                        if link not in to_visit:
-                            heapq.heappush(to_visit,[time,link])
+                        #what if the node is already in the heap?
+                        #yes we're adding it with a better time --> but..?
+                        heapq.heappush(to_visit,[time,link])
                             
 
                 except:
@@ -146,8 +147,9 @@ def djikstra(request, origin,destination,starttime):
                 if time < g.nodes[link].weight:
                     g.nodes[link].weight = time
                     g.nodes[link].back_links.append(current_node)
-                    if link not in to_visit:
-                        heapq.heappush(to_visit,[time,link])
+                    #difficulty here - we might be pushing nodes onto the
+                    #heap that are already there
+                    heapq.heappush(to_visit,[time,link])
                         
 
         
