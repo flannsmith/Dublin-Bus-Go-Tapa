@@ -16,6 +16,6 @@ urlpatterns = [
         path(r'api/timetables/<int:stop>',views.get_timetable,name='get-timetable'),
         path(r'api/shapes/twostops/<int:stop>/<int:link>',views.get_shape,name='get-shape'),
         path(r'api/shapes/route/<slug:routename>/<int:vari>',views.get_route_shape, name='route-shape'),
-        path(r'api/routefinder/<int:origin>/<int:destination>/<int:starttime>',views.djikstra,name='djikstra'),
         path(r'api/testroutefinder',views.test_dijkstra,name='tester'),
+        url(r'api/routefinder/(?P<origin_Lat>\d+\.\d+)/(?P<origin_Lon>\d+\.\d+)/(?P<destination_Lat>\d+\.\d+)/(?P<destination_Lon>\d+\.\d+)/(?P<starttime>\d+\.\d+)$',views.dijkstra2,name='djikstra-djikstra'),      
 ]

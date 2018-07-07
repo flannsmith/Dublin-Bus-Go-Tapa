@@ -32,6 +32,8 @@ if load_DJIKSTRA:
         network = pickle.load(handle)
 
 import datetime
+def dummyfloat(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon):
+    return JsonResponse({'number':destination_Lat},safe=False)
 
 def about(request):
     return render(request,'about.html',{})
@@ -217,16 +219,23 @@ class dummy_stop():
 def test_dijkstra(request):
     return dijkstra2(30000,53.3660,-6.2045,53.2822,-6.3162, text_response=True)
 
-def dijkstra2(starttime,origin_Lat,origin_Lon,destination_Lat,destination_Lon, text_response = False):
+def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,starttime=30000, text_response = True):
     """
     Djikstra, but with the user's location and destination coordinates as the
     
     start and end points
+
+    This is mess code, sorry. I will try to rewrite it in a better form later.
     """
     origin_Lat = float(origin_Lat)
     origin_Lon = float(origin_Lon)
+    starttime = float(starttime)
+    if origin_Lon > 0:
+        origin_Lon = origin_Lon*-1
     destination_Lat = float(destination_Lat)
     destination_Lon = float(destination_Lon)
+    if destination_Lon > 0:
+        destination_Lon = destination_Lon * -1
     
     global network
     global graph_lock
@@ -399,8 +408,8 @@ def dijkstra2(starttime,origin_Lat,origin_Lon,destination_Lat,destination_Lon, t
 
     #launch seperate thread to clean up the graph
     print('the count is',count)
-    #tear_down = Thread(target=tear_down_dijkstra,args=(destination_stops))
-    #tear_down.start()
+    tear_down = Thread(target=tear_down_dijkstra,args=(destination_stops,))
+    tear_down.start()
     return JsonResponse(resp,safe=False)
 
 
@@ -412,7 +421,7 @@ def tear_down_dijkstra(destination_stops):
     global graph_lock
     graph_lock = True
     for stop in destination_stops:
-        network.nodes[stop].foot_links.remove(stop)
+        del network.nodes[stop].foot_links['end']
     for node in network.nodes:
         network.nodes[node].back_links = []
     graph_lock = False
