@@ -17,5 +17,5 @@ urlpatterns = [
         path(r'api/shapes/twostops/<int:stop>/<int:link>',views.get_shape,name='get-shape'),
         path(r'api/shapes/route/<slug:routename>/<int:vari>',views.get_route_shape, name='route-shape'),
         path(r'api/routefinder/<int:origin>/<int:destination>/<int:starttime>',views.djikstra,name='djikstra'),
-
+        path(r'api/testroutefinder',views.test_dijkstra,name='tester'),
 ]
