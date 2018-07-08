@@ -132,6 +132,8 @@ def closest_stops(request,lat,lon):
 def djikstra(request, origin,destination,starttime):
     """
     Run djikstra's algorithm on graph, using the predicted time tables.
+
+    This implementation only works for routes between stops. See djikstra 2 to incorporate user location
     """
     global network
     origin = str(origin)
@@ -289,6 +291,7 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,star
     to_visit = []
     count=0
     heapq.heappush(to_visit,[starttime,current_node])
+    #the main algorithm. Lots and lots of glue and spaghetti code here
     while len(to_visit) > 0 and current_node != 'end':
         node = network.nodes[current_node]
         links = network.nodes[current_node].all_links
@@ -316,7 +319,7 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,star
 
                 except:
                     traceback.print_exc()
-                    input()
+                    
                     
 
             elif link in network.nodes[current_node].foot_links:
@@ -355,12 +358,13 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,star
                 if route == 'w':
                     route = 'walking'
                 weight = minweight
+             
         if new_curnode != 'begin':
             resp.append({'data':stops_dict[new_curnode],\
             'id':new_curnode,\
             'route':route,\
             'time':weight})
-        else:
+        else:  
             resp.append({'id':'begin','data':\
             {'lat':origin_Lat, 'lon':origin_Lon,'stop_name':'origin'},\
             'route':'walking',\
@@ -396,6 +400,7 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,star
                                 + resp[i]['data']['stop_name'] +'.'+\
                                 str((resp[i]['time']-time)//60)+\
                                 ' minutes')
+
                 current_route = resp[i]['route']
                 current_stop = resp[i]
                 time = current_stop['time']
@@ -421,7 +426,7 @@ def tear_down_dijkstra(destination_stops):
     global graph_lock
     graph_lock = True
     for stop in destination_stops:
-        del network.nodes[stop].foot_links['end']
+        network.nodes[stop].pop('end',None)
     for node in network.nodes:
         network.nodes[node].back_links = []
     graph_lock = False
