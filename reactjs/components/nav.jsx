@@ -11,17 +11,17 @@ export default class Nav extends React.Component {
         margin: '0',
         paddingTop: '1px',
         paddingBottom: '10px',
-        backgroundColor: '#46494b',
         color: 'white',
+        borderBottom: '4px solid rgb(238, 239, 241)'
       },
       sidebar: {
         height: '100%',
         width: '25%',
         transition: 'left .3s ease-in-out',
-        backgroundColor: '#65696c',
         display: this.props.display ? 'inline-block' : 'none',
         float: 'left',
-        textAlign: 'center'
+        textAlign: 'center',
+        backgroundColor: 'slategray'
       }
     }
     return (

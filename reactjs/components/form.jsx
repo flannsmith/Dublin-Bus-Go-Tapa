@@ -11,6 +11,7 @@ export default class Form extends React.Component {
         float: 'left',
         textAlign: 'center',
         marginLeft: 0,
+        paddingTop: '20px'
       },
       formInput: {
         color: 'black'
@@ -20,26 +21,22 @@ export default class Form extends React.Component {
       <div style={styles.journeyPlannerContent} >
         <form onSubmit={this.props.submit}>
 
-          <div style={styles.header}>
-            <h1>"Journey Planner"</h1>
-          </div>
-
           <div style={styles.startStop}>
             <div style={styles.start}>
               <label>
-                Start
+                <h4>"Start: (Stop ID)"</h4>
                 <input style={styles.formInput} name="start" type="text"  onChange={this.props.input} />
               </label>
             </div>
             <div style={styles.stop}>
               <label>
-                Stop
+                <h4>"Stop: (Stop ID)"</h4>
                 <input style={styles.formInput} name="stop" type="text"  onChange={this.props.input} />
               </label>
             </div>
           </div>
 
-          <div style={styles.dayTime}>
+          {/* <div style={styles.dayTime}>
             <div style={styles.day}>
               <label>
                 Day
@@ -52,7 +49,7 @@ export default class Form extends React.Component {
                 <input style={styles.formInput} style={styles.formInput} name="time" type="text" onChange={this.props.input} />
               </label>
             </div>
-          </div>
+          </div> */}
 
           <div style={styles.go}>
             <input style={styles.formInput} type="submit" value="Submit" />

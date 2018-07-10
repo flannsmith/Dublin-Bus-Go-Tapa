@@ -310,6 +310,8 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,star
                         continue
                     
                     time = resp['actualtime_arr_to']
+                    if time < starttime:
+                        time = time + (3600 * 24)
                     route = resp['route']
                     
                     if time < network.nodes[link].weight:
@@ -336,9 +338,11 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,star
         x = heapq.heappop(to_visit)
         current_time = x[0]
         current_node = x[1]
-    
+    if current_node == 'end':
+        print('found end')   
     #retrace path to get the quickest route
     weight = network.nodes['end'].weight
+    print(weight,starttime)
     cur_node = 'end'
     resp = [{'id':'end', 'route':'walking', 'data':\
                 {'lat':destination_Lat,\
@@ -348,7 +352,7 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,star
     stops_dict = json.loads(open('/home/student/dbanalysis/dbanalysis/resources/stops_trimmed.json','r').read())
     while weight > starttime:
         minweight = inf
-        
+        print(weight)        
         for link in network.nodes[cur_node].back_links:
             stop_id = link[0]
             if network.nodes[stop_id].weight < minweight:
@@ -426,7 +430,7 @@ def tear_down_dijkstra(destination_stops):
     global graph_lock
     graph_lock = True
     for stop in destination_stops:
-        network.nodes[stop].pop('end',None)
+        network.nodes[stop].foot_links.pop('end',None)
     for node in network.nodes:
         network.nodes[node].back_links = []
     graph_lock = False

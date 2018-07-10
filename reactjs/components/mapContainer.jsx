@@ -23,20 +23,22 @@ export class MapContainer extends Component {
       selectedPlace: {},
       //Center - used to change the location of the map when a location is eneterd in search bar.
       center: {
-        lat: 53.350140,
-        lon: -6.266155
+        lat: 53.3082648,
+        lng: -6.22363949999999,
       },
       zoom: 15,
       // searchName - used to display address of search to screen
       searchName: '',
-      currentLocationLat: 53.350140,
-      currentLocationLon: -6.266155,
+      currentLocationLat: 53.3082648,
+      currentLocationLon: -6.22363949999999,
       alreadyRequestedlocation: false,
-      routeCoords: [],
+      routeCoordsBus: [],
+      routeCoordsWalking: [],
       destinationLat: 0.0,
       destinationLng: 0.0,
       userDirections: null,
-      directionMarkers: null
+      directionMarkers: null,
+      polyline: null
     };
   }
 
@@ -128,51 +130,97 @@ routeFinder(address){
     now.getMonth(),
     now.getDate(),
     0,0,0);
-    const timeInMilliseconds = now.getTime() - midnight.getTime();
-    console.log(timeInMilliseconds);
-    const timeInSeconds = timeInMilliseconds / 1000; // Slow can optimize this ^^, too many uneeded steps.
-    let routeShape = [];
-    let stops = [];
-    fetch('/api/routefinder/'+originLat+'/'+originLng+'/'+destLat+'/'+destLng+'/'+timeInSeconds)
-      .then((response) => response.json())
-      .then((responseJson) => {
-        console.log(responseJson);
-        //CHANGE THIS make api "lng" not "lon" and this computation is undeeded
-        responseJson.data.map((stop) => {
-          routeShape.push({lat: stop.data.lat, lng: stop.data.lon});
-          if ( stop.id == "end" || stop.id == "begin"){
-            //do nothing
-          } else {
-            let stopTime = new Date(stop.time * 1000).toISOString().substr(11, 8);
-            stops.push(
-              <Marker
-                position={{lat: stop.data.lat, lng: stop.data.lon}}
-                title={stop.data.stop_name}
-                name={stop.data.stop_name}
-                time={stopTime}
-                onClick={this.onMarkerClick}
-              />
-            );
+  const timeInMilliseconds = now.getTime() - midnight.getTime();
+  const timeInSeconds = timeInMilliseconds / 1000; // Slow can optimize this ^^, too many uneeded steps.
+  let routeShape = {};
+  let stops = [];
+  fetch('/api/routefinder/'+originLat+'/'+originLng+'/'+destLat+'/'+destLng+'/'+timeInSeconds)
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let isPreviousRouteWalking = false;
+      let arrayID = "";
+      let notFirstStop = false;
+      //CHANGE THIS make api "lng" not "lon" and this computation is undeeded
+      responseJson.data.reverse(); //needed to reverse as API reutrns start as end CHANGE API?
+      responseJson.data.map((stop) => {
+        if (isPreviousRouteWalking && stop.route == "walking") {
+          routeShape[arrayID].push({lat: stop.data.lat, lng: stop.data.lon});
+        } else if (!isPreviousRouteWalking && stop.route != "walking") {
+          routeShape[arrayID].push({lat: stop.data.lat, lng: stop.data.lon});
+        } else {
+          if (notFirstStop){
+            routeShape[arrayID].push({lat: stop.data.lat, lng: stop.data.lon}); //Needed to connect between walking and bus routes
           }
-        });
+          arrayID = stop.id;
+          routeShape[arrayID] = [];
+          routeShape[arrayID].push({color: stop.route});
+          routeShape[arrayID].push({lat: stop.data.lat, lng: stop.data.lon});
+          notFirstStop = true;
+          if (stop.route == "walking"){
+            isPreviousRouteWalking = true;
+          } else {
+            isPreviousRouteWalking = false;
+          }
+        }
 
-        let directions = [];
-        responseJson.text.map((stop) => {
-          directions.push(<p>{stop}</p>)
-        });
+        if ( stop.id == "end" || stop.id == "begin"){
+          //do nothing
+        } else {
+          let stopTime = new Date(stop.time * 1000).toISOString().substr(11, 8);
+          stops.push(
+            <Marker
+              position={{lat: stop.data.lat, lng: stop.data.lon}}
+              title={stop.data.stop_name}
+              name={stop.data.stop_name}
+              time={stopTime}
+              onClick={this.onMarkerClick}
+              key={stop.id}
+            />
+          );
+        }
+      });
 
-        this.setState({
-          routeCoords: routeShape,
-          center: routeShape[0],
-          zoom: 17,
-          searchName: address,
-          userDirections: directions,
-          directionMarkers: stops
-        });
-      }).catch(function(error) {
-        console.log(error);
-    });
-  }
+      let directionsPolylines = [];
+      for (var i in routeShape){
+        if (routeShape[i][0].color == "walking"){
+          directionsPolylines.push(
+          <Polyline
+          path={routeShape[i].slice(1,)}
+          strokeColor="#ff0707"
+          strokeOpacity={0.8}
+          strokeWeight={2}
+          key={i}/>
+        );
+        } else {
+          directionsPolylines.push(
+          <Polyline
+          path={routeShape[i].slice(1,)}
+          strokeColor="#0000FF"
+          strokeOpacity={0.8}
+          strokeWeight={2}
+          key={i}/>
+        );
+        }
+
+      }
+
+      let directions = [];
+      responseJson.text.map((stop) => {
+        directions.push(<p>{stop}</p>)
+      });
+
+      this.setState({
+        // center: routeShape[0][0],
+        zoom: 17,
+        searchName: address,
+        userDirections: directions,
+        directionMarkers: stops,
+        polyline: directionsPolylines
+      });
+    }).catch(function(error) {
+      console.log(error);
+  });
+}
 
   requestLocation(){
     //Function to find the current location of user from browser
@@ -227,12 +275,20 @@ routeFinder(address){
       //CHANGE THIS make api "lng" not "lon" and this computation is undeeded
       data.shape.map((point) => {
         routeShape.push({lat: point.lat, lng: point.lon})
-      })
+      });
+
+      let busPolyline =
+      <Polyline
+      path={routeShape}
+      strokeColor="#0000FF"
+      strokeOpacity={0.8}
+      strokeWeight={2} />;
+
       this.setState({
-        routeCoords: routeShape,
         center: routeShape[0],
         zoom: 17,
-        searchName: 'Start'
+        searchName: 'Start',
+        polyline: busPolyline
       });
     });
   }
@@ -288,28 +344,28 @@ routeFinder(address){
     }
 
     //  **CHANGE THIS** - Need to optimise, do this in different file before import, uneeded computation here.
-    let allStops = [];
-    var i;
-    for (i in stops){
-      allStops.push(stops[i]);
-    }
+    // let allStops = [];
+    // var i;
+    // for (i in stops){
+    //   allStops.push(stops[i]);
+    // }
 
     //adds all the stops to marker array
-    let markers = [];
-    allStops.map(marker => {
-      markers.push(
-        <Marker
-          position={{lat: marker.lat, lng: marker.lon}}
-          title={marker.stop_name}
-          name={marker.stop_name}
-          onClick={this.onMarkerClick}
-          icon={{
-            url: "../static/images/bus_stop.png",
-            anchor: new google.maps.Point(32,32),
-            scaledSize: new google.maps.Size(10,10)
-          }}
-        />)
-      });
+    // let markers = [];
+    // allStops.map(marker => {
+    //   markers.push(
+    //     <Marker
+    //       position={{lat: marker.lat, lng: marker.lon}}
+    //       title={marker.stop_name}
+    //       name={marker.stop_name}
+    //       onClick={this.onMarkerClick}
+    //       icon={{
+    //         url: "../static/images/bus_stop.png",
+    //         anchor: new google.maps.Point(32,32),
+    //         scaledSize: new google.maps.Size(10,10)
+    //       }}
+    //     />)
+    //   });
 
       // Check weather to draw the route or not.
       if (this.props.route.drawRoute){
@@ -354,8 +410,8 @@ routeFinder(address){
               google={this.props.google}
               zoom={this.state.zoom}
               initialCenter={{
-                lat: 53.350140,
-                lng: -6.266155
+                lat: 53.3082648,
+                lng: -6.22363949999999,
               }}
               center={this.state.center}
               onClick={this.onMapClicked}
@@ -382,11 +438,7 @@ routeFinder(address){
                   <h4>{this.state.selectedPlace.time}</h4>
                 </div>
               </InfoWindow>
-              <Polyline
-                path={this.state.routeCoords}
-                strokeColor="#0000FF"
-                strokeOpacity={0.8}
-                strokeWeight={4} />
+              {this.state.polyline}
               </Map>
               <div style={styles.directions}>{this.state.userDirections}</div>
             </div>
