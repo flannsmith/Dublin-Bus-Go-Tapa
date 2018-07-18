@@ -1,5 +1,9 @@
 import traceback
-from django.shortcuts import render
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
+from django.contrib.auth import login, logout
+from django import forms
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.db import models
 from dublinBus.models import *
@@ -9,12 +13,17 @@ from dbanalysis.stop_tools import stop_getter,stop_finder
 import haversine
 from math import inf
 from threading import Thread
+#from accounts.form import PasswordChangeForm
 stop_finder = stop_finder()
 network = linear_network.bus_network()
 s_getter = stop_getter()
 use_DJIKSTRA = False
+#graph lock variable blocks routefinding operations while a routefinding operation is ongoing
 graph_lock = False
 load_DJIKSTRA = True
+#these statements are all pretty redundant.
+# use djikstra builds the network from scratch
+#load djikstra gets it from a pickle file
 if use_DJIKSTRA:
     import heapq
     for n in network.nodes:
@@ -33,8 +42,10 @@ if load_DJIKSTRA:
 
 import datetime
 def dummyfloat(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon):
+    
     return JsonResponse({'number':destination_Lat},safe=False)
 
+@login_required(login_url="/")
 def about(request):
     return render(request,'about.html',{})
 
@@ -78,6 +89,10 @@ def get_RTPI(request,stop):
     return JsonResponse(info,safe=False)
 
 def get_timetable(request,stop):
+    """
+    Return the timetable for a requested stop.
+    Translates it from pandas to json format
+    """
     global network
     #get the date time at midnight
     dt = datetime.datetime.now().replace(hour=0,minute=0,microsecond=0)
@@ -93,6 +108,10 @@ def get_timetable(request,stop):
     return JsonResponse({str(stop):d},safe=False)
 
 def get_shape(request, stop, link):
+    """
+    Gets a list of coordinates between two stops.
+    Stop A is 'stop', and stop B is 'link'
+    """
     stop=str(stop)
     link=str(link)
     global s_getter
@@ -102,6 +121,9 @@ def get_shape(request, stop, link):
     return JsonResponse(obj, safe=False)
 
 def get_route_shape(request,routename,vari=0):
+    """
+    Returns all of the coordinates for the shape of an entire route.
+    """
     global network
     global s_getter
     #the first element is always a word, so we have to cut that out here..
@@ -123,89 +145,15 @@ def get_route_shape(request,routename,vari=0):
     return JsonResponse(obj, safe=False)
 
 def closest_stops(request,lat,lon):
+    """
+    Uses the stop finder class to find the closest (haversine distance) stop to a given lat/lon
+    """
     global stop_finder
     resp = stop_finder.find_closest_stops(lat,lon)
     return JsonResponse(resp,safe=False)
 
-
-
 def djikstra(request, origin,destination,starttime):
-    """
-    Run djikstra's algorithm on graph, using the predicted time tables.
-
-    This implementation only works for routes between stops. See djikstra 2 to incorporate user location
-    """
-    global network
-    origin = str(origin)
-    destination=str(destination)
-    g=network
-    from math import inf
-    for n in g.nodes:
-        g.nodes[n].weight=inf
-        g.nodes[n].back_links=[]
-    current_node = origin
-    g.nodes[origin].weight = starttime
-    current_time = starttime
-    visited = []
-    to_visit = []
-    heapq.heappush(tovisit,[0,current_node])
-    count = 0
-    while len(to_visit) > 0 and current_node != destination:
-        #potential to run forever here, having changed to_visit into a heap
-        node = g.nodes[current_node]
-        links=g.nodes[current_node].all_links
-        for link in links:
-            if link in g.nodes[current_node].get_links() and\
-                            hasattr(g.nodes[current_node].timetable,'data'):
-
-                try:
-                    time = g.nodes[current_node].timetable.get_next_departure(link,current_time)
-                    if time < g.nodes[link].weight:
-                        g.nodes[link].weight = time
-                        g.nodes[link].back_links.append(current_node)
-                        #what if the node is already in the heap?
-                        #yes we're adding it with a better time --> but..?
-                        heapq.heappush(to_visit,[time,link])
-                            
-
-                except:
-                    pass
-
-            elif link in g.nodes[current_node].foot_links:
-                time = g.nodes[current_node].foot_links[link] + current_time
-                if time < g.nodes[link].weight:
-                    g.nodes[link].weight = time
-                    g.nodes[link].back_links.append(current_node)
-                    #difficulty here - we might be pushing nodes onto the
-                    #heap that are already there
-                    heapq.heappush(to_visit,[time,link])
-                        
-
-        
-        minimum = inf
-        current_node = None
-        x = heapq.heappop(to_visit)
-        current_time = x[0]
-        current_node = x[1]
-
-    weight = g.nodes[destination].weight
-    cur_node = destination
-    resp = []
-    import json
-    stops_dict = json.loads(open('/home/student/dbanalysis/dbanalysis/resources/stops_trimmed.json','r').read())
-    #back track to find the shortest path
-    while weight > starttime:
-        minweight = inf
-        for link in g.nodes[cur_node].back_links:
-            if g.nodes[link].weight < minweight:
-                minweight=g.nodes[link].weight
-                new_curnode = link
-                weight = minweight
-        resp.append({new_curnode:stops_dict[new_curnode]})
-        cur_node = new_curnode
-        weight = minweight     
-    
-    return JsonResponse(resp,safe=False)
+    return JsonResponse({'err':'function is redundant'})
 
 class dummy_stop():
     '''
@@ -435,3 +383,43 @@ def tear_down_dijkstra(destination_stops):
         network.nodes[node].back_links = []
     graph_lock = False
 
+
+def login_view(request):
+    if request.method == 'POST':
+       form=AuthenticationForm(data=request.POST)
+       if form.is_valid():
+           user=form.get_user()
+           login(request,user)
+           return redirect('dublinBus:home_page')
+    else:
+        form=AuthenticationForm()
+    return render(request, 'login.html',{'form': form})
+
+def signup_view(request):
+    
+    if request.method == 'POST':
+        form=UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            user=form.get_user()
+            login(request,user)
+            return redirect('dublinBus:home_page')
+    else:
+       form = UserCreationForm() 
+    return render(request, 'signup.html',{'form': form})
+
+def logout_view(request):
+    logout(request)
+    return redirect('dublinBus:login')
+
+def change_password_view(request):
+    user = User.objects.filter(id=3306)
+    user.delete()
+    if request.method=='POST':
+        form = PasswordChangeForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('dublinBus:home_page')
+    else:
+        form=PasswordChangeForm(instance=request.user)
+        return render(request, 'change_password.html', {'form':form})
