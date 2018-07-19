@@ -1,6 +1,6 @@
 import traceback
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
-from django.contrib.auth import login, logout
+from django.contrib.auth import login, logout, get_user, authenticate
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
@@ -13,6 +13,7 @@ from dbanalysis.stop_tools import stop_getter,stop_finder
 import haversine
 from math import inf
 from threading import Thread
+from django.contrib.auth.models import User
 #from accounts.form import PasswordChangeForm
 stop_finder = stop_finder()
 network = linear_network.bus_network()
@@ -45,6 +46,7 @@ def dummyfloat(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon):
     
     return JsonResponse({'number':destination_Lat},safe=False)
 
+#Home page loads only if the user is logged in 
 @login_required(login_url="/")
 def about(request):
     return render(request,'about.html',{})
@@ -384,34 +386,39 @@ def tear_down_dijkstra(destination_stops):
     graph_lock = False
 
 
+#This view is to log the users in 
 def login_view(request):
     if request.method == 'POST':
        form=AuthenticationForm(data=request.POST)
        if form.is_valid():
            user=form.get_user()
+           print('user from login view', user)
            login(request,user)
            return redirect('dublinBus:home_page')
     else:
         form=AuthenticationForm()
     return render(request, 'login.html',{'form': form})
 
+#This view is to sign-up users 
 def signup_view(request):
-    
+        
     if request.method == 'POST':
         form=UserCreationForm(request.POST)
+        username=request.POST['username']
         if form.is_valid():
-            form.save()
-            user=form.get_user()
+            user=form.save()
             login(request,user)
             return redirect('dublinBus:home_page')
     else:
        form = UserCreationForm() 
     return render(request, 'signup.html',{'form': form})
 
+#This viw to log users out. 
 def logout_view(request):
     logout(request)
     return redirect('dublinBus:login')
 
+#This view is for the users to change their password. But its not fully ready yet
 def change_password_view(request):
     user = User.objects.filter(id=3306)
     user.delete()
@@ -423,3 +430,6 @@ def change_password_view(request):
     else:
         form=PasswordChangeForm(instance=request.user)
         return render(request, 'change_password.html', {'form':form})
+    
+#View to display calendar and time of entry 
+

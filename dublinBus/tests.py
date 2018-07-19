@@ -1,5 +1,5 @@
 from django.test import TestCase
-from dublinBus.models import stops
+
 # Create your tests here.
 '''
 
@@ -24,10 +24,12 @@ class testStops(TestCase):
         pass
 
 
-    def test_correct_stops(self):
-        
+    def test_all_stops(self):
         pass
+
+        
         
 
-
-
+if __name__ == '__main__':
+    test = testStops()
+    test.test_all_stops()

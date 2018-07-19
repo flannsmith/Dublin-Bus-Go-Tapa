@@ -1,11 +1,13 @@
 import React from "react"
 import { render } from "react-dom"
-import App1Container from "./containers/App1Container"
+import Main from "./containers/main"
 
 class App1 extends React.Component {
+    //Top container of this react code that is bound to div with id "App1" in about.html
+
     render() {
         return (
-                <App1Container> </App1Container>
+                <Main> </Main>
                )
     }
 }

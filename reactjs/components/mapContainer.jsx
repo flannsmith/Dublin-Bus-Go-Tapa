@@ -6,7 +6,7 @@ import stops from './stops.js';
 export class MapContainer extends Component {
   constructor(props) {
     super(props);
-    //Define all the  functions that are to be bound to this component
+    //Define all the  functions that are to be bound to this component. This is needed as when bable compiles all jsx files into one big bundle the browser will not be able define what "this" is related to. Doing these bindings configures it so the browser knows they are related to this compoent (class).
     this.onMarkerClick = this.onMarkerClick.bind(this);
     this.onMapClicked = this.onMapClicked.bind(this);
     this.handleFormSubmit = this.handleFormSubmit.bind(this);
@@ -16,10 +16,10 @@ export class MapContainer extends Component {
     this.drawRoute = this.drawRoute.bind(this);
     this.routeFinder = this.routeFinder.bind(this);
 
-    //Set the state of the component
+    //Set the state of the component, a dictionary of data we want to use/manipulate.
     this.state = {
-      showingInfoWindow: false,
-      activeMarker: {},
+      showingInfoWindow: false, //toggle info window
+      activeMarker: {}, 
       selectedPlace: {},
       //Center - used to change the location of the map when a location is eneterd in search bar.
       center: {
@@ -29,16 +29,16 @@ export class MapContainer extends Component {
       zoom: 15,
       // searchName - used to display address of search to screen
       searchName: '',
-      currentLocationLat: 53.3082648,
-      currentLocationLon: -6.22363949999999,
-      alreadyRequestedlocation: false,
-      routeCoordsBus: [],
-      routeCoordsWalking: [],
-      destinationLat: 0.0,
+      currentLocationLat: 53.3082648, //users current latitude, defaults to UCD
+      currentLocationLon: -6.22363949999999,  //users current longitude, defaults to UCD
+      alreadyRequestedlocation: false, //stops bug that browser keeps requesting user location
+      routeCoordsBus: [], //array of bus route location objects to be drawn as polyline
+      routeCoordsWalking: [], //array of walking location objects to be drawn as polyline
+      destinationLat: 0.0, 
       destinationLng: 0.0,
-      userDirections: null,
-      directionMarkers: null,
-      polyline: null
+      userDirections: null, //container for user directions of a given route
+      directionMarkers: null, //contianer for the array of marker objects on a given route
+      polyline: null //container for polyline objects for a given route.
     };
   }
 
@@ -49,7 +49,7 @@ export class MapContainer extends Component {
 
 
   onMarkerClick(props, marker, e) {
-    //Function to control marker click event
+    //Function to control marker click event, sets active marker to the current clicked marker
     this.setState({
       selectedPlace: props,
       activeMarker: marker,
@@ -94,12 +94,12 @@ export class MapContainer extends Component {
           center : results[0].geometry.location, //chages center of map and center marker
           searchName : address, //chages search name <p> value
           zoom: 16,
-          destinationLat: results[0].geometry.location.lat(),
-          destinationLng: results[0].geometry.location.lng()
+          destinationLat: results[0].geometry.location.lat(), //sets destinationLat
+          destinationLng: results[0].geometry.location.lng() //sets destinationLng
         }
       );
 
-      this.routeFinder(address);
+      this.routeFinder(address); //passes address to route finder function
 
       return; //used to exit function
     }
@@ -114,16 +114,20 @@ export class MapContainer extends Component {
 }
 
 routeFinder(address){
-  const originLat = this.state.currentLocationLat;
-  let originLng = this.state.currentLocationLon;
+  //Function that uses API calls to find a route for a user and display route to the map.
+
+  const originLat = this.state.currentLocationLat; //sets origin to user current location
+  let originLng = this.state.currentLocationLon; //sets origin to user current location
   if ( originLng < 0 ){
-    originLng = originLng * -1;
+    originLng = originLng * -1; //Backend code can't handel negative value so need to change to positve.
   }
-  const destLat = this.state.destinationLat;
+  const destLat = this.state.destinationLat; //sets destination to destinationLat and destinationLng we set in geocodeAddress fucntion.
   let destLng = this.state.destinationLng;
   if ( destLng < 0 ){
-    destLng = destLng * -1;
+    destLng = destLng * -1; //Backend code can't handel negative value so need to change to positve.
   }
+  
+  //Block below is to get the current time of day in seconds from users device to be used in API call.
   let now = new Date();
   let midnight = new Date(
     now.getFullYear(),
@@ -132,17 +136,20 @@ routeFinder(address){
     0,0,0);
   const timeInMilliseconds = now.getTime() - midnight.getTime();
   const timeInSeconds = timeInMilliseconds / 1000; // Slow can optimize this ^^, too many uneeded steps.
-  let routeShape = {};
-  let stops = [];
-  fetch('/api/routefinder/'+originLat+'/'+originLng+'/'+destLat+'/'+destLng+'/'+timeInSeconds)
+  
+  let routeShape = {}; //holds all the direction objects
+  let stops = []; //holds all markers for a route
+  fetch('/api/routefinder/'+originLat+'/'+originLng+'/'+destLat+'/'+destLng+'/'+timeInSeconds) //API call
     .then((response) => response.json())
     .then((responseJson) => {
-      let isPreviousRouteWalking = false;
+      
+      //In the below block of code we loop through all the data and store each bus route and walking route (which contain location objects) in its own array which in turn are all stored in the routeShape object. From this then we have a route shape object that has all the sub journeys of a route (arrays) as properties.
+      let isPreviousRouteWalking = false; 
       let arrayID = "";
       let notFirstStop = false;
       //CHANGE THIS make api "lng" not "lon" and this computation is undeeded
       responseJson.data.reverse(); //needed to reverse as API reutrns start as end CHANGE API?
-      responseJson.data.map((stop) => {
+      responseJson.data.map((stop) => { //Loops through the json directions data
         if (isPreviousRouteWalking && stop.route == "walking") {
           routeShape[arrayID].push({lat: stop.data.lat, lng: stop.data.lon});
         } else if (!isPreviousRouteWalking && stop.route != "walking") {
@@ -163,10 +170,11 @@ routeFinder(address){
           }
         }
 
+
         if ( stop.id == "end" || stop.id == "begin"){
-          //do nothing
+          //do nothing already have stop and start markers
         } else {
-          let stopTime = new Date(stop.time * 1000).toISOString().substr(11, 8);
+          let stopTime = new Date(stop.time * 1000).toISOString().substr(11, 8); //gets predicted time "stop.time" which is in seconds and presents it in a readable date time.
           stops.push(
             <Marker
               position={{lat: stop.data.lat, lng: stop.data.lon}}
@@ -267,9 +275,10 @@ routeFinder(address){
   }
 
   drawRoute(start, stop){
-    this.props.reset();
+    //function to draw a route given two stop ids
+    this.props.reset(); // sets draw route state of Main component back to false.
     let routeShape = [];
-    fetch('/api/shapes/twostops/'+start+'/'+stop).then(function(response) {
+    fetch('/api/shapes/twostops/'+start+'/'+stop).then(function(response) { //API call.
       return response.json();
     }).then(data => {
       //CHANGE THIS make api "lng" not "lon" and this computation is undeeded
@@ -298,7 +307,7 @@ routeFinder(address){
     let styles = {
       mapContainer: {
         height: '100%',
-        width: this.props.display ? '75%' : '100%',
+        width: this.props.display ? '75%' : '100%', //checks weather nav is open or closed and displays appropriatly.
         transition: 'left .3s ease-in-out',
         float: 'right',
         zIndex: '+1',
@@ -315,7 +324,7 @@ routeFinder(address){
       googleMap: {
       },
       directions: {
-        display: this.state.directionMarkers ? 'block' : 'none',
+        display: this.state.directionMarkers ? 'block' : 'none', //checks weather directions for a route is needed.
         position: 'absolute',
         backgroundColor: 'white',
         height: '100%',
@@ -330,6 +339,7 @@ routeFinder(address){
     }
 
     if (!this.state.alreadyRequestedlocation){
+      //if the browser has not already requested the location do this.
       if('geolocation' in navigator){
         // geolocation is supported
         this.requestLocation();
@@ -387,7 +397,7 @@ routeFinder(address){
                           className="form-control input-lg"
                           id="address"
                           placeholder="Rathmines"
-                          ref={this.setSearchInputElementReference}
+                          ref={this.setSearchInputElementReference} //ref to get input
                           required />
                           <button type="submit" className="btn btn-default btn-lg">
                             <span className="glyphicon glyphicon-search" aria-hidden="true"></span>
@@ -406,6 +416,8 @@ routeFinder(address){
                 </div>
               </div>
             </div>
+
+            {/* Map component */}
             <Map
               google={this.props.google}
               zoom={this.state.zoom}
@@ -417,12 +429,15 @@ routeFinder(address){
               onClick={this.onMapClicked}
               style={styles.googleMap}>
               {/* {markers} */}
+              
+              {/* Current location Marker */}
               <Marker
                 position={{lat: this.state.currentLocationLat, lng: this.state.currentLocationLon}}
                 title="Location"
                 name="You are Here"
                 onClick={this.onMarkerClick}
               />
+              {/* Center of map marker, used for search */}
               <Marker
                 position={this.state.center}
                 title={this.state.searchName}

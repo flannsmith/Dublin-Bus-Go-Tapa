@@ -52,3 +52,14 @@ class Shapes(models.Model):
 
     class Meta:
         unique_together = (('shape_id', 'shape_pt_sequence'),)
+        
+        
+#Model for event calander
+class Event(models.Model):
+    day=models.DateField(u'Day of travel', help_text=u'Day of travel')
+    start_time=models.TimeField(u'Starting time', help_text=u'Starting time')
+
+    class Meta:
+        verbose_name=u'Scheduling'
+        verbose_name_plural=u'Scheduling'
+

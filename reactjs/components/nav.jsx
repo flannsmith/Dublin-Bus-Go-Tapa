@@ -31,9 +31,9 @@ export default class Nav extends React.Component {
         </div>
         <div style={styles.menu}>
           <h2>Journey Planner</h2>
-          <Form submit={this.props.submit} input={this.props.input} />
+          {/* Form compoent that passes submit function and input funciton as props, which in turn is a prop of this fucntion. The Main componet holds the data for these funcions. */}
+          <Form submit={this.props.submit} input={this.props.input} /> 
         </div>
-
       </nav>
     )
   }

@@ -19,18 +19,21 @@ export default class Form extends React.Component {
     }
     return (
       <div style={styles.journeyPlannerContent} >
+        {/* When form is submitted we call this.props.submit which in the Nav compoent calls this.props.submit which calls the submit function in the Main componet */}
         <form onSubmit={this.props.submit}>
 
           <div style={styles.startStop}>
             <div style={styles.start}>
               <label>
                 <h4>"Start: (Stop ID)"</h4>
+                {/* Same function call process as above but for input */}
                 <input style={styles.formInput} name="start" type="text"  onChange={this.props.input} />
               </label>
             </div>
             <div style={styles.stop}>
               <label>
                 <h4>"Stop: (Stop ID)"</h4>
+                {/* Same function call process as above but for input */}
                 <input style={styles.formInput} name="stop" type="text"  onChange={this.props.input} />
               </label>
             </div>
