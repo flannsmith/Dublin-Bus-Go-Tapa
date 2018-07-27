@@ -63,3 +63,14 @@ class Event(models.Model):
         verbose_name=u'Scheduling'
         verbose_name_plural=u'Scheduling'
 
+#Model for TimeTables
+class Stops(models.Model):
+    stop_id = models.CharField(max_length=20)
+    stop_name = models.CharField(max_length=100)
+    stop_lat = models.DecimalField(max_digits=20, decimal_places=18)
+    stop_lon = models.DecimalField(max_digits=20, decimal_places=18)
+
+    #Add fucntions to manipulate data SQL queries etc. 
+
+    def __str__(self):
+        return self.stop_id

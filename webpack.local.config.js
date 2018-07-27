@@ -33,7 +33,7 @@ config.plugins = config.plugins.concat([
 ])
 
 config.module.loaders.push(
-  { test: /\.jsx?$/, exclude: /node_modules/, loaders: ['react-hot', 'babel'] }
+  { test: /\.jsx?$/, exclude: /node_modules/, loaders: ['babel'] }
 )
 
 module.exports = config

@@ -171,7 +171,9 @@ class dummy_stop():
 def test_dijkstra(request):
     return dijkstra2(30000,53.3660,-6.2045,53.2822,-6.3162, text_response=True)
 
-def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,starttime=30000, text_response = True):
+def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,\
+        destination_Lon,starttime=30000, text_response = True,\
+        walking_penalty=30,switch_bus_penalty=30):
     """
     Djikstra, but with the user's location and destination coordinates as the
     
@@ -240,8 +242,10 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,star
     visited = []
     to_visit = []
     count=0
-    heapq.heappush(to_visit,[starttime,current_node])
     #the main algorithm. Lots and lots of glue and spaghetti code here
+    current_route = 'w'
+    heapq.heappush(to_visit,[current_time,'begin','w'])    
+
     while len(to_visit) > 0 and current_node != 'end':
         node = network.nodes[current_node]
         links = network.nodes[current_node].all_links
@@ -260,14 +264,18 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,star
                         continue
                     
                     time = resp['actualtime_arr_to']
+                    route = resp['route']
+                   
                     if time < starttime:
                         time = time + (3600 * 24)
-                    route = resp['route']
+                    if current_route != 'w' and current_route != route:
+                        #add time here penalty for switching bus route
+                        time += switch_bus_penalty
                     
                     if time < network.nodes[link].weight:
                         network.nodes[link].weight = time
                         network.nodes[link].back_links.append([current_node,route,time])                   
-                        heapq.heappush(to_visit,[time,link])
+                        heapq.heappush(to_visit,[time,link,route])
 
                 except:
                     traceback.print_exc()
@@ -275,19 +283,24 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,star
                     
 
             elif link in network.nodes[current_node].foot_links:
-                
-                time = network.nodes[current_node].foot_links[link] + current_time
+                #can insert a walking penalty here. I have inserted '30' as a walking penalty, to 
+                #see if it makes any difference
+                if current_route != 'w':
+                    time = network.nodes[current_node].foot_links[link] + current_time + walking_penalty
+                else:
+                    time = network.nodes[current_node].foot_links[link] + current_time
                 if time < network.nodes[link].weight:
                     network.nodes[link].weight = time
                     #append a 'w' for route id as this is a walking link
                     network.nodes[link].back_links.append([current_node,'w',time])
-                    heapq.heappush(to_visit,[time,link])
+                    heapq.heappush(to_visit,[time,link,'w'])
 
 
         #remove the next node from the bottom of the heap
         x = heapq.heappop(to_visit)
         current_time = x[0]
         current_node = x[1]
+        current_route = x[2]
     if current_node == 'end':
         print('found end')   
     #retrace path to get the quickest route
@@ -302,7 +315,8 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon,star
     stops_dict = json.loads(open('/home/student/dbanalysis/dbanalysis/resources/stops_trimmed.json','r').read())
     while weight > starttime:
         minweight = inf
-        print(weight)        
+        print(weight)  
+        print(network.nodes[cur_node].back_links)      
         for link in network.nodes[cur_node].back_links:
             stop_id = link[0]
             if network.nodes[stop_id].weight < minweight:

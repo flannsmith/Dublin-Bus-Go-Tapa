@@ -1,5 +1,6 @@
 import React from "react"
 import Form from "../components/form"
+import ReactLoading from "react-loading";
 
 export default class Nav extends React.Component {
   render() {
@@ -11,28 +12,41 @@ export default class Nav extends React.Component {
         margin: '0',
         paddingTop: '1px',
         paddingBottom: '10px',
-        color: 'white',
-        borderBottom: '4px solid rgb(238, 239, 241)'
       },
       sidebar: {
-        height: '100%',
-        width: '25%',
+        width: '40%',
         transition: 'left .3s ease-in-out',
         display: this.props.display ? 'inline-block' : 'none',
         float: 'left',
         textAlign: 'center',
-        backgroundColor: 'slategray'
+        backgroundColor: 'white'
+      },
+      loading: {
+        display: this.props.loading ? 'block' : 'none'
+      },
+      directions: {
+        display: this.props.showDirections ? 'block' : 'none'
       }
     }
     return (
       <nav style={styles.sidebar}>
         <div style={styles.menu}>
-          <h2>Menu</h2>
+           <h3>Dublin Bus</h3>
         </div>
-        <div style={styles.menu}>
-          <h2>Journey Planner</h2>
-          {/* Form compoent that passes submit function and input funciton as props, which in turn is a prop of this fucntion. The Main componet holds the data for these funcions. */}
-          <Form submit={this.props.submit} input={this.props.input} /> 
+        <div className="panel panel-default">
+          <div className="panel-heading">
+             <h3 className="panel-title">Journey Planner</h3>
+           </div>
+           <div className="panel-body">
+            {/* Form compoent that passes submit function and input funciton as props, which in turn is a prop of this fucntion. The Main componet holds the data for these funcions. */}
+               <Form submit={this.props.submit} input={this.props.input} />
+               <div style={styles.loading}>
+                  <ReactLoading type={"bubbles"} color="#000" />
+                </div>
+                <div style={styles.directions}>
+                    {this.props.userDirections}
+                 </div>
+            </div>
         </div>
       </nav>
     )

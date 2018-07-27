@@ -13,16 +13,30 @@ export default class Main extends React.Component {
    this.handleInputChange = this.handleInputChange.bind(this);
    this.handleSubmit = this.handleSubmit.bind(this);
    this.resetDraw = this.resetDraw.bind(this);
-    
-   //set the state of this componet dictionary of data we want to store
+   this.showDirections = this.showDirections.bind(this);
+   this.showDirectionFromLocation = this.showDirectionFromLocation.bind(this);
+   
+    //set the state of this componet dictionary of data we want to store
    this.state = {
      sidebarOpen: false,
      start: '',
      stop: '',
      day: '',
      time: '',
-     drawRoute: false
+     drawRoute: false,
+     loading: false,
+     showDirections: false,
+     userDirections: null
    };
+ }
+
+ showDirections(directions){
+   this.setState({
+    userDirections: directions,
+    loading: false,
+    showDirections: true,
+    sidebarOpen: true
+   });
  }
 
  //Gets input from form in Nav componet. This function is passed to the Nav componet below as a prop. ie. <Nav input={this.handleInputChange} />
@@ -37,10 +51,20 @@ export default class Main extends React.Component {
 
  // Handels submit event of form. This function is passed to the Nav componet below as a prop. ie. <Nav submit={this.handleSubmit} />
  handleSubmit(event) {
-   alert('Submitted');
    event.preventDefault(); //stops default form submit which sends a http request and reloads the page.
    this.setState({
-     drawRoute: true
+     showDirections: false,
+     drawRoute: true,
+     loading: true
+   });
+ }
+
+ showDirectionFromLocation(){
+    this.setState({
+     showDirections: false,
+     drawRoute: true,
+     loading: true,
+     sidebarOpen: true
    });
  }
 
@@ -52,8 +76,9 @@ export default class Main extends React.Component {
  }
 
   //Funtion to toggle nav bar, this function is passed as a prop to the MapContainer component. ie. <MapContainer onClick={this.toggleNavBar} />
-  toggleNavBar() {
+  toggleNavBar(e, xButton) {
     this.setState({sidebarOpen: !this.state.sidebarOpen}); //toggles sidebarOpen value
+    xButton.classList.toggle("change");
   }
 
   render() {
@@ -62,10 +87,12 @@ export default class Main extends React.Component {
     let isMapContainerWide = this.state.sidebarOpen ? true : false;
 
     return (
-      <div>
-        <Nav display={isSidebarOpen} submit={this.handleSubmit} input={this.handleInputChange} />
-        <MapContainer display={isMapContainerWide} onClick={this.toggleNavBar} route={this.state} reset={this.resetDraw}/>
-      </div>
+      <div id="mainContent" className="fullHeight">
+        <Nav display={isSidebarOpen} submit={this.handleSubmit} input={this.handleInputChange} loading={this.state.loading} showDirections={this.state.showDirections} userDirections={this.state.userDirections} />
+        <div className="fullHeight">
+           <MapContainer display={isMapContainerWide} onClick={this.toggleNavBar} route={this.state} reset={this.resetDraw} showDirections={this.showDirections} showDirectionFromLocation={this.showDirectionFromLocation}/>
+        </div>  
+    </div>
     )
   }
 }

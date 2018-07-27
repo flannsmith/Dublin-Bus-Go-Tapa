@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { Map, InfoWindow, Marker, GoogleApiWrapper, Polyline } from "google-maps-react";
 import {geolocated} from 'react-geolocated';
-import stops from './stops.js';
+//import stops from './stops.js';
 
 export class MapContainer extends Component {
   constructor(props) {
@@ -15,6 +15,7 @@ export class MapContainer extends Component {
     this.requestLocation = this.requestLocation.bind(this);
     this.drawRoute = this.drawRoute.bind(this);
     this.routeFinder = this.routeFinder.bind(this);
+    this.handleJourneyPlannerSubmit = this.handleJourneyPlannerSubmit.bind(this);
 
     //Set the state of the component, a dictionary of data we want to use/manipulate.
     this.state = {
@@ -29,6 +30,9 @@ export class MapContainer extends Component {
       zoom: 15,
       // searchName - used to display address of search to screen
       searchName: '',
+      searchOriginName: '',
+      startLat: 0,
+      startLon: 0,
       currentLocationLat: 53.3082648, //users current latitude, defaults to UCD
       currentLocationLon: -6.22363949999999,  //users current longitude, defaults to UCD
       alreadyRequestedlocation: false, //stops bug that browser keeps requesting user location
@@ -36,9 +40,9 @@ export class MapContainer extends Component {
       routeCoordsWalking: [], //array of walking location objects to be drawn as polyline
       destinationLat: 0.0, 
       destinationLng: 0.0,
-      userDirections: null, //container for user directions of a given route
       directionMarkers: null, //contianer for the array of marker objects on a given route
-      polyline: null //container for polyline objects for a given route.
+      polyline: null, //container for polyline objects for a given route.
+      startMarker: null,
     };
   }
 
@@ -66,43 +70,92 @@ export class MapContainer extends Component {
       })
     }
   }
-
+   
   handleFormSubmit(submitEvent){
     //Function to gather form data and send to geocodeAddress funciton
+    this.props.showDirectionFromLocation();
     submitEvent.preventDefault(); //prevents http request (page reloading) normal form behaviour
     var address = this.searchInputElement.value; //gets form input value
-    this.geocodeAddress(address);
-  }
+    this.geocodeAddress(address, (results) => {
+      console.log(results)
+      let address = ''; //store address here
+      results[0].address_components.map(names => { //loops through the array of addres components and adds to full address.
+        address += names.short_name + ", "
+      })
+      console.log(address);
+      this.setState({
+          center : results[0].geometry.location, //chages center of map and center marker
+          searchName : address, //chages search name <p> value
+          zoom: 16,
+          destinationLat: results[0].geometry.location.lat(),
+          destinationLng: results[0].geometry.location.lng()
+        }
+      );
+      
+      let fromLocation=true;
+      this.routeFinder(address, fromLocation);
+    });  
+}
 
+  handleJourneyPlannerSubmit(start, stop){
+    //Function to gather form data and send to geocodeAddress funciton
+    this.props.reset();
+    this.geocodeAddress(start, (results) => {
+      let results1 = results;
+      let address1 = ''; //store address here
+      results1[0].address_components.map(names => { //loops through the array of addres components and adds to full address.
+         address1 += names.short_name + ", "
+       });
+      let originMarker = <Marker
+                position={{lat: results1[0].geometry.location.lat(), lng: results1[0].geometry.location.lng()}}
+                title={address1}
+                name={address1}
+                onClick={this.onMarkerClick}
+              />
+      this.setState({
+          startMarker: originMarker,
+          searchOriginName: address1,
+          zoom: 16,
+          startLat:results1[0].geometry.location.lat(),
+          startLon:results1[0].geometry.location.lng()
+        }
+      );
+      this.geocodeAddress(stop, (results) => {
+         let results2 = results;
+         let address2 = ''; //store address here
+         results2[0].address_components.map(names => { //loops through the array of addres components and adds to full address.
+            address += names.short_name + ", "
+         });
+        this.setState({
+            center : results2[0].geometry.location, //chages center of map and center marker
+            searchName : address, //chages search name <p> value
+            destinationLat: results2[0].geometry.location.lat(),
+            destinationLng: results2[0].geometry.location.lng()
+           }
+        );
+        let fromLocation=false;
+        this.routeFinder(address, fromLocation);
+
+       });
+    });
+ }
+    
   setSearchInputElementReference(inputReference){
     //function whos parameter is linked to the ref of the form input (ie. gets form input value and stores it.)
     this.searchInputElement = inputReference;
   }
 
 
-  geocodeAddress(address) {
+  geocodeAddress(address, callback) {
     //function to find co-ordinates from given address
     this.geocoder.geocode({ 'address': address }, function handleResults(results, status) {
 
       //if result is found do this
       if (status === google.maps.GeocoderStatus.OK) {
-        let address = ''; //store address here
-        results[0].address_components.map(names => { //loops through the array of addres components and adds to full address.
-          address += names.short_name + ", "
-        })
-        this.setState({
-          center : results[0].geometry.location, //chages center of map and center marker
-          searchName : address, //chages search name <p> value
-          zoom: 16,
-          destinationLat: results[0].geometry.location.lat(), //sets destinationLat
-          destinationLng: results[0].geometry.location.lng() //sets destinationLng
-        }
-      );
-
-      this.routeFinder(address); //passes address to route finder function
-
-      return; //used to exit function
-    }
+            console.log("geocodeAddress RESULTS:");
+            console.log(results);
+            callback(results); //used to exit function
+         }
 
     //if no result is found do this
     this.setState({
@@ -113,14 +166,28 @@ export class MapContainer extends Component {
   }.bind(this));
 }
 
-routeFinder(address){
+routeFinder(address, fromLocation){
   //Function that uses API calls to find a route for a user and display route to the map.
-
-  const originLat = this.state.currentLocationLat; //sets origin to user current location
-  let originLng = this.state.currentLocationLon; //sets origin to user current location
-  if ( originLng < 0 ){
-    originLng = originLng * -1; //Backend code can't handel negative value so need to change to positve.
+  
+  let originLat = 0;
+  let originLng = 0;
+  if (fromLocation == true){
+    originLat = this.state.currentLocationLat;
+    originLng = this.state.currentLocationLon;
+    if ( originLng < 0 ){
+      originLng = originLng * -1;
+    }
+  } else {
+    console.log("Setting seact origins");
+    console.log(this.state.startLat);
+    console.log(this.state.startLon);
+    originLat = this.state.startLat;
+    originLng = this.state.startLon;
+    if ( originLng < 0 ){
+      originLng = originLng * -1;
+    }
   }
+  console.log(originLat);
   const destLat = this.state.destinationLat; //sets destination to destinationLat and destinationLng we set in geocodeAddress fucntion.
   let destLng = this.state.destinationLng;
   if ( destLng < 0 ){
@@ -216,12 +283,13 @@ routeFinder(address){
       responseJson.text.map((stop) => {
         directions.push(<p>{stop}</p>)
       });
+     
+      this.props.showDirections(directions);
 
       this.setState({
         // center: routeShape[0][0],
         zoom: 17,
         searchName: address,
-        userDirections: directions,
         directionMarkers: stops,
         polyline: directionsPolylines
       });
@@ -307,7 +375,7 @@ routeFinder(address){
     let styles = {
       mapContainer: {
         height: '100%',
-        width: this.props.display ? '75%' : '100%', //checks weather nav is open or closed and displays appropriatly.
+        width: this.props.display ? '60%' : '100%', //checks weather nav is open or closed and displays appropriatly.
         transition: 'left .3s ease-in-out',
         float: 'right',
         zIndex: '+1',
@@ -316,21 +384,56 @@ routeFinder(address){
       searchContainer: {
         textAlign: 'center'
       },
-      button: {
-        backgroundColor: 'Black',
-        textAlign: 'left',
-        marginRight: '60px'
-      },
-      googleMap: {
+      reactMapContainer: {
+        position: 'relative !important',
+        height: '500px !important',
+     },
+      googleMap: { 
+        height: '100%',
+        width: this.props.display ? '60%' : '100%', //checks weather nav is open or closed and displays appropriatly.
+        float: 'right',
+        zIndex: '+1',
       },
       directions: {
-        display: this.state.directionMarkers ? 'block' : 'none', //checks weather directions for a route is needed.
+        display: this.state.showDirections ? 'block' : 'none', //checks weather directions for a route is needed.
         position: 'absolute',
         backgroundColor: 'white',
         height: '100%',
         marginLeft: '85%',
         width: '15%',
         padding: '10px',
+      },
+      container: {
+         display: 'inline-block',
+         cursor: 'pointer',
+         color: 'white',
+         marginLeft: '20px',
+         float: 'left',
+         height: '0px'
+     },
+      form: {
+        paddingTop: '15px',
+        paddingBotton: '15px',
+        textAlign: 'right',
+        backgroundColor: 'rgb(3, 79, 152)',
+      },
+      topInput: {
+        display: 'inline-block',
+        width: '50%',
+        marginRight: '2%'
+      },
+      searchButton: {
+        display: 'inline-block',
+        float: 'right',
+        marginRight: '20px'
+       },
+       divButton: {
+        height: '0px',
+        width:  '0px',
+        display: 'none'
+      },
+      loading: {
+        display: this.state.showLoading ? 'block' : 'none',
       }
     }
     //if map is not loaded do this
@@ -379,46 +482,38 @@ routeFinder(address){
 
       // Check weather to draw the route or not.
       if (this.props.route.drawRoute){
-        this.drawRoute(this.props.route.start, this.props.route.stop);
+         this.handleJourneyPlannerSubmit(this.props.route.start, this.props.route.stop);
       }
+    
+//     const button = React.createElement('div', {
+  //               ref: 'xButton',
+    //             onClick: e => this.props.onClick(e, this.refs.xButton),
+      //           className: 'container'
+        //    });
 
       return (
-        <div style={styles.mapContainer} >
-          <div className="container" style={styles.searchContainer} >
-            <div className="row">
-              <div className="col-sm-12">
-                <form className="form-inline" onSubmit={this.handleFormSubmit}>
-                  <div className="row">
-                    <div className="col-xs-8 col-sm-10">
-                      <div className="form-group">
-                        <button type="button" className="btn btn-outline-secondary" onClick={this.props.onClick} style={styles.button}></button>
+       <div style={styles.googleMap} >
+                <form className="" onSubmit={this.handleFormSubmit} style={styles.form}>
+                        <div ref='xButton' onClick={e => this.props.onClick(e, this.refs.xButton)} style={styles.container}>
+                             <div style={styles.divButton}></div>
+                             <div className="bar1"></div>
+                             <div className="bar2"></div>
+                             <div className="bar3"></div>
+                          </div> 
                         <label className="sr-only" htmlFor="address">Address</label>
                         <input type="text"
                           className="form-control input-lg"
+                          style={styles.topInput}
                           id="address"
-                          placeholder="Rathmines"
+                          placeholder="From current location to:"
                           ref={this.setSearchInputElementReference} //ref to get input
                           required />
-                          <button type="submit" className="btn btn-default btn-lg">
+                          <button type="submit" className="btn btn-default btn-lg" style={styles.searchButton}>
                             <span className="glyphicon glyphicon-search" aria-hidden="true"></span>
                           </button>
-                        </div>
-                      </div>
-                    </div>
                   </form>
-                </div>
-              </div>
-              <div className="row">
-                <div className="col-sm-12">
-
-                  <p className="bg-info">{this.state.searchName}</p>
-
-                </div>
-              </div>
-            </div>
-
-            {/* Map component */}
-            <Map
+          <div id="mapBox" className="fullHeight">
+             <Map
               google={this.props.google}
               zoom={this.state.zoom}
               initialCenter={{
@@ -426,8 +521,8 @@ routeFinder(address){
                 lng: -6.22363949999999,
               }}
               center={this.state.center}
-              onClick={this.onMapClicked}
-              style={styles.googleMap}>
+              onClick={this.onMapClicked}>
+              
               {/* {markers} */}
               
               {/* Current location Marker */}
@@ -444,6 +539,7 @@ routeFinder(address){
                 name={this.state.searchName}
                 onClick={this.onMarkerClick}
               />
+              {this.state.startMarker}
               {this.state.directionMarkers}
               <InfoWindow
                 marker={this.state.activeMarker}
@@ -455,13 +551,13 @@ routeFinder(address){
               </InfoWindow>
               {this.state.polyline}
               </Map>
-              <div style={styles.directions}>{this.state.userDirections}</div>
             </div>
+          </div>
           );
         }
       }
       export default GoogleApiWrapper({
-        apiKey: "AIzaSyAyesbQMyKVVbBgKVi2g6VX7mop2z96jBo",
+        apiKey: "AIzaSyC36Mq4sQqGL0ePgZRKN_FqCeY1olujJFM",
         v: "3.30"
       })(MapContainer);
 
