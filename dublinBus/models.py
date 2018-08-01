@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-
+from django.contrib.auth.models import User
 '''
 This is just a example model from the tutorial to use as a refrence to begin with - Gav
 
@@ -74,3 +74,11 @@ class Stops(models.Model):
 
     def __str__(self):
         return self.stop_id
+
+#Model for user favourites option
+class UserFavourites(models.Model):
+    user_id=models.ForeignKey(User, related_name="+", on_delete=models.CASCADE)
+    location_address=models.CharField(max_length=100)
+    location_name=models.CharField(max_length=20)
+    
+    

@@ -20,6 +20,14 @@
                                                               
         <!-- Popper JS -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.0/umd/popper.min.js"></script>
+        <script>
+            window.myCallbackFunc = function() {
+                window.initOne && window.initOne();
+                window.initTwo && window.initTwo();
+                window.initThree && window.initThree();
+         }
+        </script>
+        <script async defer type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyC36Mq4sQqGL0ePgZRKN_FqCeY1olujJFM&libraries=places&callback=myCallbackFunc"></script>        
                                                                       
         <!-- Latest compiled JavaScript -->
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.1.0/js/bootstrap.min.js"></script>

@@ -15,7 +15,11 @@ export default class Main extends React.Component {
    this.resetDraw = this.resetDraw.bind(this);
    this.showDirections = this.showDirections.bind(this);
    this.showDirectionFromLocation = this.showDirectionFromLocation.bind(this);
-   
+   this.setTime = this.setTime.bind(this);   
+   this.handleSubmitFav = this.handleSubmitFav.bind(this)
+   this.journeyPlannerFormStart = this.journeyPlannerFormStart.bind(this);
+   this.journeyPlannerFormEnd = this.journeyPlannerFormEnd.bind(this);
+
     //set the state of this componet dictionary of data we want to store
    this.state = {
      sidebarOpen: false,
@@ -26,7 +30,15 @@ export default class Main extends React.Component {
      drawRoute: false,
      loading: false,
      showDirections: false,
-     userDirections: null
+     userDirections: null,
+     eta: null,
+     originName: null,
+     startLat: null,
+     startLng: null,
+     destinationName: null,
+     destLatLng: null,
+     destLat: null,
+     destLng: null
    };
  }
 
@@ -55,7 +67,28 @@ export default class Main extends React.Component {
    this.setState({
      showDirections: false,
      drawRoute: true,
-     loading: true
+     loading: true,
+   });
+ }
+ handleSubmitFav(event){
+     event.preventDefault();
+     fetch('favourites/rath/ho')
+ }
+
+ journeyPlannerFormStart(originName, startLat, startLng){
+   this.setState({
+    originName: originName,
+    startLat: startLat,
+    startLng: startLng,
+   });
+ }
+
+ journeyPlannerFormEnd(destinationName, destLat, destLng, destLatLng){
+   this.setState({
+    destinationName: destinationName,
+    destLat: destLat,
+    destLng: destLng,
+    destLatLng: destLatLng
    });
  }
 
@@ -81,6 +114,12 @@ export default class Main extends React.Component {
     xButton.classList.toggle("change");
   }
 
+  setTime(time) {
+   this.setState({
+     eta: time
+   });
+ }
+
   render() {
     //checks weather the sidebar is open or not in the state of this component and passes the variables as componets to the Nav and Mapcontainer to use in their CSS properties.
     let isSidebarOpen = this.state.sidebarOpen ? true : false;
@@ -88,9 +127,9 @@ export default class Main extends React.Component {
 
     return (
       <div id="mainContent" className="fullHeight">
-        <Nav display={isSidebarOpen} submit={this.handleSubmit} input={this.handleInputChange} loading={this.state.loading} showDirections={this.state.showDirections} userDirections={this.state.userDirections} />
+        <Nav time={this.state.eta} display={isSidebarOpen} submit={this.handleSubmit} input={this.handleInputChange} loading={this.state.loading} journeyPlannerFormStart={this.journeyPlannerFormStart} journeyPlannerFormEnd={this.journeyPlannerFormEnd} showDirections={this.state.showDirections} userDirections={this.state.userDirections} submit_fav={this.handleSubmitFav}/>
         <div className="fullHeight">
-           <MapContainer display={isMapContainerWide} onClick={this.toggleNavBar} route={this.state} reset={this.resetDraw} showDirections={this.showDirections} showDirectionFromLocation={this.showDirectionFromLocation}/>
+           <MapContainer display={isMapContainerWide} setTime={this.setTime} onClick={this.toggleNavBar} route={this.state} reset={this.resetDraw} showDirections={this.showDirections} showDirectionFromLocation={this.showDirectionFromLocation}/>
         </div>  
     </div>
     )

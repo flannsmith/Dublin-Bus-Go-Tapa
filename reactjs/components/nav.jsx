@@ -1,6 +1,6 @@
 import React from "react"
 import Form from "../components/form"
-import ReactLoading from "react-loading";
+import Fav from "../components/favourites"
 
 export default class Nav extends React.Component {
   render() {
@@ -14,18 +14,14 @@ export default class Nav extends React.Component {
         paddingBottom: '10px',
       },
       sidebar: {
-        width: '40%',
-        transition: 'left .3s ease-in-out',
-        display: this.props.display ? 'inline-block' : 'none',
+        display: this.props.display ? 'block' : 'none',
+        width: '50%',
         float: 'left',
         textAlign: 'center',
-        backgroundColor: 'white'
-      },
-      loading: {
-        display: this.props.loading ? 'block' : 'none'
-      },
-      directions: {
-        display: this.props.showDirections ? 'block' : 'none'
+        backgroundColor: 'white',
+        maxHeight: '100%',
+        overflow: 'scroll',
+        position: 'relative',
       }
     }
     return (
@@ -39,14 +35,17 @@ export default class Nav extends React.Component {
            </div>
            <div className="panel-body">
             {/* Form compoent that passes submit function and input funciton as props, which in turn is a prop of this fucntion. The Main componet holds the data for these funcions. */}
-               <Form submit={this.props.submit} input={this.props.input} />
-               <div style={styles.loading}>
-                  <ReactLoading type={"bubbles"} color="#000" />
-                </div>
-                <div style={styles.directions}>
-                    {this.props.userDirections}
-                 </div>
+               <Form submit={this.props.submit} eta={this.props.time} loading={this.props.loading} journeyPlannerFormStart={this.props.journeyPlannerFormStart} journeyPlannerFormEnd={this.props.journeyPlannerFormEnd} showDirections={this.props.showDirections} input={this.props.input} userDirections={this.props.userDirections} />
             </div>
+            <div className="panel-heading">
+                <h3 className="panel-title">Favourites</h3>
+            </div>
+            <div className="panel-title">
+                <Fav submit={this.props.submit_fav}/>
+            </div>
+            
+                
+            
         </div>
       </nav>
     )

@@ -272,6 +272,7 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,\
                         #add time here penalty for switching bus route
                         time += switch_bus_penalty
                     
+                                
                     if time < network.nodes[link].weight:
                         network.nodes[link].weight = time
                         network.nodes[link].back_links.append([current_node,route,time])                   
@@ -445,5 +446,13 @@ def change_password_view(request):
         form=PasswordChangeForm(instance=request.user)
         return render(request, 'change_password.html', {'form':form})
     
-#View to display calendar and time of entry 
+#View to display calendar and time of entry
+def user_favourites(request, loc_address, loc_name):
+    print("in fav")
+    #if request.user.is_authenticated:
+    username=request.user.username
+    print(username)
+    fav=UserFavourites(user_id=username, location_address=loc_address, location_name=loc_name)
+    fav.save()
+    return 
 

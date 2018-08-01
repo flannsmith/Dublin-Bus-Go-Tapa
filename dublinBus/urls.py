@@ -11,6 +11,7 @@ urlpatterns = [
     url(r'^home_page$', views.about, name='home_page'),
     url(r'^JourneyPlanner$', views.journeyPlanner, name='blog'),
     url(r'^map.html',views.map_reader,name='mapreader'),
+    path(r'favourites/<slug:loc_address>/<slug:loc_name>', views.user_favourites, name='favourites'),
         url(r'^heatmap_html',views.heatmap,name='heatmap'),
         url(r'^get_routes/',views.get_routes,name='routes'),
         url(r'api/allstops',views.get_stops,name='stops'),

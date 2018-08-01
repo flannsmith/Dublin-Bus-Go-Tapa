@@ -1,7 +1,9 @@
 import React, { Component } from "react";
 import { Map, InfoWindow, Marker, GoogleApiWrapper, Polyline } from "google-maps-react";
-import {geolocated} from 'react-geolocated';
+//import {geolocated} from 'react-geolocated';
+import Button_Icon_BlueSky from "../../dublinBus/static/images/Button_Icon_BlueSky.svg";
 //import stops from './stops.js';
+import LocationSearchInput from "./LocationSearchInput.jsx";
 
 export class MapContainer extends Component {
   constructor(props) {
@@ -9,13 +11,14 @@ export class MapContainer extends Component {
     //Define all the  functions that are to be bound to this component. This is needed as when bable compiles all jsx files into one big bundle the browser will not be able define what "this" is related to. Doing these bindings configures it so the browser knows they are related to this compoent (class).
     this.onMarkerClick = this.onMarkerClick.bind(this);
     this.onMapClicked = this.onMapClicked.bind(this);
-    this.handleFormSubmit = this.handleFormSubmit.bind(this);
+  //  this.handleFormSubmit = this.handleFormSubmit.bind(this);
     this.setSearchInputElementReference = this.setSearchInputElementReference.bind(this);
     this.geocodeAddress = this.geocodeAddress.bind(this);
     this.requestLocation = this.requestLocation.bind(this);
     this.drawRoute = this.drawRoute.bind(this);
     this.routeFinder = this.routeFinder.bind(this);
     this.handleJourneyPlannerSubmit = this.handleJourneyPlannerSubmit.bind(this);
+    this.changeMapState = this.changeMapState.bind(this);    
 
     //Set the state of the component, a dictionary of data we want to use/manipulate.
     this.state = {
@@ -30,7 +33,6 @@ export class MapContainer extends Component {
       zoom: 15,
       // searchName - used to display address of search to screen
       searchName: '',
-      searchOriginName: '',
       startLat: 0,
       startLon: 0,
       currentLocationLat: 53.3082648, //users current latitude, defaults to UCD
@@ -43,6 +45,7 @@ export class MapContainer extends Component {
       directionMarkers: null, //contianer for the array of marker objects on a given route
       polyline: null, //container for polyline objects for a given route.
       startMarker: null,
+      endMarker: null,
     };
   }
 
@@ -70,74 +73,105 @@ export class MapContainer extends Component {
       })
     }
   }
-   
-  handleFormSubmit(submitEvent){
-    //Function to gather form data and send to geocodeAddress funciton
-    this.props.showDirectionFromLocation();
-    submitEvent.preventDefault(); //prevents http request (page reloading) normal form behaviour
-    var address = this.searchInputElement.value; //gets form input value
-    this.geocodeAddress(address, (results) => {
-      console.log(results)
-      let address = ''; //store address here
-      results[0].address_components.map(names => { //loops through the array of addres components and adds to full address.
-        address += names.short_name + ", "
-      })
-      console.log(address);
-      this.setState({
-          center : results[0].geometry.location, //chages center of map and center marker
+
+  changeMapState(results, address, destinationMarker, lat, lng){
+    this.setState({
+          center : results, //chages center of map and center marker
           searchName : address, //chages search name <p> value
           zoom: 16,
-          destinationLat: results[0].geometry.location.lat(),
-          destinationLng: results[0].geometry.location.lng()
+          endMarker: destinationMarker,
+          startMarker: null,
+          destinationLat: lat,
+          destinationLng: lng
         }
       );
-      
-      let fromLocation=true;
-      this.routeFinder(address, fromLocation);
-    });  
-}
+  }
 
-  handleJourneyPlannerSubmit(start, stop){
+  //BELOW CODE IS NOW REDUNDANT AS WE ARE USING A REACT COMPONENT THAT CALLS THE GEOCODER API FOR US.
+ 
+//  handleFormSubmit(submitEvent){
+    //Function to gather form data and send to geocodeAddress funciton
+  //  var e = null;
+    //if (!this.props.route.sidebarOpen){
+    //    this.props.onClick(e, this.refs.xButton);
+    //}
+    //this.props.showDirectionFromLocation();
+    //submitEvent.preventDefault(); //prevents http request (page reloading) normal form behaviour
+    //var address = this.searchInputElement.value; //gets form input value
+     // address+=",ireland";  
+      //this.geocodeAddress(address, (results) => {
+      //console.log(results)
+     // let addressEnd = ''; //store address here
+      //results[0].address_components.map(names => { //loops through the array of addres components and adds to full address.
+      //  addressEnd += names.short_name + ", "
+     // })
+     // let destinationMarker = <Marker
+       //         id = "End Marker"
+         //       position={{lat: results[0].geometry.location.lat(), lng: results[0].geometry.location.lng()}}
+           //     title={addressEnd}
+             //   name={addressEnd}
+               // onClick={this.onMarkerClick}
+        //      />
+      //console.log(addressEnd);
+      ///this.setState({
+         // center : results[0].geometry.location, //chages center of map and center marker
+          //searchName : addressEnd, //chages search name <p> value
+          //zoom: 16,
+          //endMarker: destinationMarker,
+          //startMarker: null,
+          //destinationLat: results[0].geometry.location.lat(),
+          //destinationLng: results[0].geometry.location.lng()
+       // }
+      //);
+      
+      //let fromLocation=true;
+      //this.routeFinder(address, fromLocation);
+   // });  
+//}
+
+  handleJourneyPlannerSubmit(originName, startLat, startLng, destinationName, destLat, destLng, destLatLng){
     //Function to gather form data and send to geocodeAddress funciton
     this.props.reset();
-    this.geocodeAddress(start, (results) => {
-      let results1 = results;
-      let address1 = ''; //store address here
-      results1[0].address_components.map(names => { //loops through the array of addres components and adds to full address.
-         address1 += names.short_name + ", "
-       });
-      let originMarker = <Marker
-                position={{lat: results1[0].geometry.location.lat(), lng: results1[0].geometry.location.lng()}}
-                title={address1}
-                name={address1}
+   // this.geocodeAddress(start, (results) => {
+     // let results1 = results;
+     // let address1 = ''; //store address here
+     // results1[0].address_components.map(names => { //loops through the array of addres components and adds to full address.
+       //  address1 += names.short_name + ", "
+     //  });
+    let originMarker = <Marker
+                id="Origin Marker"
+                position={{lat: startLat, lng: startLng}}
+                title={originName}
+                name={originName}
                 onClick={this.onMarkerClick}
               />
-      this.setState({
-          startMarker: originMarker,
-          searchOriginName: address1,
-          zoom: 16,
-          startLat:results1[0].geometry.location.lat(),
-          startLon:results1[0].geometry.location.lng()
-        }
-      );
-      this.geocodeAddress(stop, (results) => {
-         let results2 = results;
-         let address2 = ''; //store address here
-         results2[0].address_components.map(names => { //loops through the array of addres components and adds to full address.
-            address += names.short_name + ", "
-         });
-        this.setState({
-            center : results2[0].geometry.location, //chages center of map and center marker
-            searchName : address, //chages search name <p> value
-            destinationLat: results2[0].geometry.location.lat(),
-            destinationLng: results2[0].geometry.location.lng()
-           }
-        );
-        let fromLocation=false;
-        this.routeFinder(address, fromLocation);
-
-       });
-    });
+    //  this.geocodeAddress(stop, (results) => {
+      //   let results2 = results;
+        // let address2 = ''; //store address here
+        // results2[0].address_components.map(names => { //loops through the array of addres components and adds to full address.
+         //     address2 += names.short_name + ", "
+      //   });
+    let destinationMarker = <Marker
+        id="End Marker"
+        position={{lat: destLat, lng: destLng}}
+        title={destinationName}
+        name={destinationName}
+        onClick={this.onMarkerClick}
+     />
+    this.setState({
+        startMarker: originMarker,
+        zoom: 16, 
+        startLat: startLat,
+        startLon: startLng,
+        endMarker: destinationMarker,
+        center : destLatLng, //chages center of map and center marker
+        searchName : destinationName, //chages search name <p> value
+        destinationLat: destLat,
+        destinationLng: destLng
+       }
+    );
+    let fromLocation=false;
+    this.routeFinder(destinationName, fromLocation);
  }
     
   setSearchInputElementReference(inputReference){
@@ -147,7 +181,7 @@ export class MapContainer extends Component {
 
 
   geocodeAddress(address, callback) {
-    //function to find co-ordinates from given address
+    //function to find co-ordinates from given address -- DEPRECIATED NOT USED ANYMORE
     this.geocoder.geocode({ 'address': address }, function handleResults(results, status) {
 
       //if result is found do this
@@ -181,13 +215,14 @@ routeFinder(address, fromLocation){
     console.log("Setting seact origins");
     console.log(this.state.startLat);
     console.log(this.state.startLon);
+    console.log(this.state.destinationLat);
+    console.log(this.state.destinationLng);
     originLat = this.state.startLat;
     originLng = this.state.startLon;
     if ( originLng < 0 ){
       originLng = originLng * -1;
     }
   }
-  console.log(originLat);
   const destLat = this.state.destinationLat; //sets destination to destinationLat and destinationLng we set in geocodeAddress fucntion.
   let destLng = this.state.destinationLng;
   if ( destLng < 0 ){
@@ -206,6 +241,7 @@ routeFinder(address, fromLocation){
   
   let routeShape = {}; //holds all the direction objects
   let stops = []; //holds all markers for a route
+  console.log("fetch('/api/routefinder/"+originLat+"/"+originLng+"/"+destLat+"/"+destLng+"/"+timeInSeconds+")");
   fetch('/api/routefinder/'+originLat+'/'+originLng+'/'+destLat+'/'+destLng+'/'+timeInSeconds) //API call
     .then((response) => response.json())
     .then((responseJson) => {
@@ -254,7 +290,14 @@ routeFinder(address, fromLocation){
           );
         }
       });
-
+        
+      console.log(stops);
+      console.log(stops[stops.length -1]);  
+      let lastMarker = stops[stops.length -1];
+      let time = lastMarker.props.time;
+      console.log(time);
+      this.props.setTime(time);
+ 
       let directionsPolylines = [];
       for (var i in routeShape){
         if (routeShape[i][0].color == "walking"){
@@ -281,7 +324,7 @@ routeFinder(address, fromLocation){
 
       let directions = [];
       responseJson.text.map((stop) => {
-        directions.push(<p>{stop}</p>)
+        directions.push(<li class="list-group-item">{stop}</li>)
       });
      
       this.props.showDirections(directions);
@@ -291,11 +334,12 @@ routeFinder(address, fromLocation){
         zoom: 17,
         searchName: address,
         directionMarkers: stops,
-        polyline: directionsPolylines
+        polyline: directionsPolylines,
       });
     }).catch(function(error) {
       console.log(error);
   });
+
 }
 
   requestLocation(){
@@ -375,7 +419,7 @@ routeFinder(address, fromLocation){
     let styles = {
       mapContainer: {
         height: '100%',
-        width: this.props.display ? '60%' : '100%', //checks weather nav is open or closed and displays appropriatly.
+        width: this.props.display ? '50%' : '100%', //checks weather nav is open or closed and displays appropriatly.
         transition: 'left .3s ease-in-out',
         float: 'right',
         zIndex: '+1',
@@ -390,7 +434,7 @@ routeFinder(address, fromLocation){
      },
       googleMap: { 
         height: '100%',
-        width: this.props.display ? '60%' : '100%', //checks weather nav is open or closed and displays appropriatly.
+        width: this.props.display ? '50%' : '100%', //checks weather nav is open or closed and displays appropriatly.
         float: 'right',
         zIndex: '+1',
       },
@@ -409,28 +453,35 @@ routeFinder(address, fromLocation){
          color: 'white',
          marginLeft: '20px',
          float: 'left',
-         height: '0px'
+         height: '100%'
      },
       form: {
         paddingTop: '15px',
-        paddingBotton: '15px',
+        paddingBottom: '15px',
         textAlign: 'right',
         backgroundColor: 'rgb(3, 79, 152)',
+        height: '60px'
       },
       topInput: {
         display: 'inline-block',
-        width: '50%',
-        marginRight: '2%'
+        width: '30%',
+        marginRight: '2%',
+        height: '3px',
+        fontSize: '15px'
       },
       searchButton: {
         display: 'inline-block',
         float: 'right',
-        marginRight: '20px'
+        marginRight: '20px',
+        padding: '1px 5px'
        },
        divButton: {
         height: '0px',
         width:  '0px',
         display: 'none'
+      },
+      mapBox: {
+        zIndex: '-1'
       },
       loading: {
         display: this.state.showLoading ? 'block' : 'none',
@@ -482,7 +533,7 @@ routeFinder(address, fromLocation){
 
       // Check weather to draw the route or not.
       if (this.props.route.drawRoute){
-         this.handleJourneyPlannerSubmit(this.props.route.start, this.props.route.stop);
+         this.handleJourneyPlannerSubmit(this.props.route.originName, this.props.route.startLat, this.props.route.startLng, this.props.route.destinationName, this.props.route.destLat, this.props.route.destLng, this.props.route.desLatLng);
       }
     
 //     const button = React.createElement('div', {
@@ -493,26 +544,16 @@ routeFinder(address, fromLocation){
 
       return (
        <div style={styles.googleMap} >
-                <form className="" onSubmit={this.handleFormSubmit} style={styles.form}>
+                <div style={styles.form}>
                         <div ref='xButton' onClick={e => this.props.onClick(e, this.refs.xButton)} style={styles.container}>
                              <div style={styles.divButton}></div>
                              <div className="bar1"></div>
                              <div className="bar2"></div>
                              <div className="bar3"></div>
                           </div> 
-                        <label className="sr-only" htmlFor="address">Address</label>
-                        <input type="text"
-                          className="form-control input-lg"
-                          style={styles.topInput}
-                          id="address"
-                          placeholder="From current location to:"
-                          ref={this.setSearchInputElementReference} //ref to get input
-                          required />
-                          <button type="submit" className="btn btn-default btn-lg" style={styles.searchButton}>
-                            <span className="glyphicon glyphicon-search" aria-hidden="true"></span>
-                          </button>
-                  </form>
-          <div id="mapBox" className="fullHeight">
+                          <LocationSearchInput routeFinder={this.routeFinder} route={this.props.route} changeMapState={this.changeMapState} onMarkerClick={this.onMarkerClick}  onClick={this.props.onClick} showDirectionFromLocation={this.props.showDirectionFromLocation} xButton={this.refs.xButton} />
+                  </div>
+          <div id="mapBox" className="fullHeight" style={styles.mapBox} >
              <Map
               google={this.props.google}
               zoom={this.state.zoom}
@@ -531,16 +572,10 @@ routeFinder(address, fromLocation){
                 title="Location"
                 name="You are Here"
                 onClick={this.onMarkerClick}
-              />
-              {/* Center of map marker, used for search */}
-              <Marker
-                position={this.state.center}
-                title={this.state.searchName}
-                name={this.state.searchName}
-                onClick={this.onMarkerClick}
-              />
+              /> 
               {this.state.startMarker}
               {this.state.directionMarkers}
+              {this.state.endMarker}
               <InfoWindow
                 marker={this.state.activeMarker}
                 visible={this.state.showingInfoWindow}>
