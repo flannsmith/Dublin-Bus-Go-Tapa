@@ -4,6 +4,7 @@ import { Map, InfoWindow, Marker, GoogleApiWrapper, Polyline } from "google-maps
 import Button_Icon_BlueSky from "../../dublinBus/static/images/Button_Icon_BlueSky.svg";
 //import stops from './stops.js';
 import LocationSearchInput from "./LocationSearchInput.jsx";
+import Clock from "./clock.jsx";
 
 export class MapContainer extends Component {
   constructor(props) {
@@ -19,6 +20,9 @@ export class MapContainer extends Component {
     this.routeFinder = this.routeFinder.bind(this);
     this.handleJourneyPlannerSubmit = this.handleJourneyPlannerSubmit.bind(this);
     this.changeMapState = this.changeMapState.bind(this);    
+    this.tick = this.tick.bind(this);
+    this.sendLocation = this.sendLocation.bind(this);
+    this.resetStartTimer = this.resetStartTimer.bind(this);    
 
     //Set the state of the component, a dictionary of data we want to use/manipulate.
     this.state = {
@@ -46,6 +50,9 @@ export class MapContainer extends Component {
       polyline: null, //container for polyline objects for a given route.
       startMarker: null,
       endMarker: null,
+      timer: false,
+      stopTimer: false,
+      time: 1
     };
   }
 
@@ -54,6 +61,12 @@ export class MapContainer extends Component {
     this.geocoder = new google.maps.Geocoder();
   }
 
+  tick(){
+    let newTime = this.state.time + 1;
+    this.setState({
+      time: newTime
+    });
+  }
 
   onMarkerClick(props, marker, e) {
     //Function to control marker click event, sets active marker to the current clicked marker
@@ -61,6 +74,12 @@ export class MapContainer extends Component {
       selectedPlace: props,
       activeMarker: marker,
       showingInfoWindow: true
+    });
+  }
+  
+  resetStartTimer(value){
+  this.setState({
+      timer: value
     });
   }
 
@@ -158,6 +177,8 @@ export class MapContainer extends Component {
         name={destinationName}
         onClick={this.onMarkerClick}
      />
+
+    console.log(originName, startLat, startLng, destinationName, destLat, destLng, destLatLng);
     this.setState({
         startMarker: originMarker,
         zoom: 16, 
@@ -168,10 +189,12 @@ export class MapContainer extends Component {
         searchName : destinationName, //chages search name <p> value
         destinationLat: destLat,
         destinationLng: destLng
-       }
+       },
+        () => {
+            let fromLocation=false;
+            this.routeFinder(destinationName, fromLocation);
+        }
     );
-    let fromLocation=false;
-    this.routeFinder(destinationName, fromLocation);
  }
     
   setSearchInputElementReference(inputReference){
@@ -229,16 +252,30 @@ routeFinder(address, fromLocation){
     destLng = destLng * -1; //Backend code can't handel negative value so need to change to positve.
   }
   
+  let timeInSeconds = 0;
+
   //Block below is to get the current time of day in seconds from users device to be used in API call.
-  let now = new Date();
-  let midnight = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    0,0,0);
-  const timeInMilliseconds = now.getTime() - midnight.getTime();
-  const timeInSeconds = timeInMilliseconds / 1000; // Slow can optimize this ^^, too many uneeded steps.
-  
+  if (fromLocation == true){
+     let now = new Date();
+     let midnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0,0,0);
+    const timeInMilliseconds = now.getTime() - midnight.getTime();
+    timeInSeconds = timeInMilliseconds / 1000; // Slow can optimize this ^^, too many uneeded steps.
+  } else {
+     let now = this.props.route.date;
+     let midnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0,0,0);
+    const timeInMilliseconds = now.getTime() - midnight.getTime();
+    timeInSeconds = timeInMilliseconds / 1000; // Slow can optimize this ^^, too many uneeded steps.
+    timeInSeconds = timeInSeconds.toFixed(2);
+  }
+
   let routeShape = {}; //holds all the direction objects
   let stops = []; //holds all markers for a route
   console.log("fetch('/api/routefinder/"+originLat+"/"+originLng+"/"+destLat+"/"+destLng+"/"+timeInSeconds+")");
@@ -359,14 +396,21 @@ routeFinder(address, fromLocation){
       var geolng = pos.coords.longitude;
       var geolat = pos.coords.latitude;
       var newCenter = {lat: geolat, lng: geolng}
+      
+      if(!self.state.alreadyRequestedlocation){
+        self.setState({
+            timer: true,
+            center: newCenter 
+         });    
+      }
 
       self.setState({
         // center: { ...self.state.center, lat: geolat, lon: geolng},
-        center: newCenter,
+        //center: newCenter,
         currentLocationLat: geolat,
         currentLocationLon: geolng,
         alreadyRequestedlocation: true,
-        zoom: 17
+        zoom: 17,
       });
 
       // let moveCenter = {currentLocationLat:this.state.currentLocationLat, currentLocationLon: this.state.currentLocationLon}
@@ -383,7 +427,7 @@ routeFinder(address, fromLocation){
       })
     }
 
-    navigator.geolocation.getCurrentPosition(success, error, options); //above two functions (success and options variable are passed in as parameters here)
+    navigator.geolocation.watchPosition(success, error, options); //above two functions (success and options variable are passed in as parameters here)
   }
 
   drawRoute(start, stop){
@@ -412,6 +456,15 @@ routeFinder(address, fromLocation){
         polyline: busPolyline
       });
     });
+  }
+
+  sendLocation(){
+    console.log("About to send fetch to db.");
+    let originLng = 0;
+    if (this.state.currentLocationLon < 0){
+        originLng = this.state.currentLocationLon * -1;
+    }
+    fetch('/api/userLocation/'+this.state.currentLocationLat+'/'+originLng, {method: "GET", credentials: 'same-origin'}); //API call.
   }
 
   render() {
@@ -533,7 +586,13 @@ routeFinder(address, fromLocation){
 
       // Check weather to draw the route or not.
       if (this.props.route.drawRoute){
-         this.handleJourneyPlannerSubmit(this.props.route.originName, this.props.route.startLat, this.props.route.startLng, this.props.route.destinationName, this.props.route.destLat, this.props.route.destLng, this.props.route.desLatLng);
+         this.handleJourneyPlannerSubmit(this.props.route.originName, this.props.route.startLat, this.props.route.startLng, this.props.route.destinationName, this.props.route.destLat, this.props.route.destLng, this.props.route.destLatLng);
+      }
+
+    
+      if (this.state.time % 60 == 0){
+        console.log(this.state.time);
+        this.sendLocation();  
       }
     
 //     const button = React.createElement('div', {
@@ -554,7 +613,8 @@ routeFinder(address, fromLocation){
                           <LocationSearchInput routeFinder={this.routeFinder} route={this.props.route} changeMapState={this.changeMapState} onMarkerClick={this.onMarkerClick}  onClick={this.props.onClick} showDirectionFromLocation={this.props.showDirectionFromLocation} xButton={this.refs.xButton} />
                   </div>
           <div id="mapBox" className="fullHeight" style={styles.mapBox} >
-             <Map
+            <Clock stopTimer={this.state.stopTimer} tick={this.tick} timer={this.state.timer} resetStartTimer={this.resetStartTimer} /> 
+            <Map
               google={this.props.google}
               zoom={this.state.zoom}
               initialCenter={{

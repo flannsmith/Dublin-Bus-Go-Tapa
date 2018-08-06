@@ -81,4 +81,15 @@ class UserFavourites(models.Model):
     location_address=models.CharField(max_length=100)
     location_name=models.CharField(max_length=20)
     
-    
+class Userpoints(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    dublin_bus_points = models.IntegerField()
+
+class Userlocation(models.Model):
+    user_id=models.ForeignKey(User, on_delete=models.CASCADE)
+    user_lat=models.DecimalField(max_digits=20, decimal_places=18)
+    user_lon=models.DecimalField(max_digits=20, decimal_places=18)
+    insert_timestamp=models.DateTimeField()    
+
+    class Meta:
+        unique_together = (('user_id', 'insert_timestamp'),)

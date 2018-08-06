@@ -20,8 +20,10 @@ export default class JourneySearchInput extends React.Component {
       .then(results => getLatLng(results[0]))
       .then(latLng => {
             console.log('Success', latLng);
+            console.log(this.props.journeyPlannerFormStart);
+            console.log(this.props.journeyPlannerFormEnd);
             this.props.journeyPlannerFormStart ? this.props.journeyPlannerFormStart(this.state.address, latLng.lat, latLng.lng) : null;
-            this.props.journeyPlannerFormEnd ? this.props.journeyPlannerFormEnd(this.state.address, latLng.lat, latLng.lng) : null;
+            this.props.journeyPlannerFormEnd ? this.props.journeyPlannerFormEnd(this.state.address, latLng.lat, latLng.lng, latLng) : null;
         })
       .catch(error => console.error('Error', error));
   };
@@ -30,9 +32,7 @@ export default class JourneySearchInput extends React.Component {
     let styles = {
         topInput: {
             display: 'inline-block',
-            width: '30%',
             marginRight: '2%',
-            height: '3px',
             fontSize: '16px',
             zIndex: '+1',
             position: 'relative'
@@ -41,8 +41,6 @@ export default class JourneySearchInput extends React.Component {
             overflow: 'visible',
             zIndex: '+1',
             position: 'relative',
-            width: '30%',
-            marginLeft: '68%',
             fontSize: '15px',
             borderRadius: '25px'
         }
@@ -62,7 +60,7 @@ export default class JourneySearchInput extends React.Component {
         googleCallbackName="initTwo"
       >
         {({ getInputProps, suggestions, getSuggestionItemProps, loading }) => (
-          <div>
+        <div>
             <input
               {...getInputProps({
                 placeholder: 'Search Places ...',

@@ -19,9 +19,12 @@ export default class Main extends React.Component {
    this.handleSubmitFav = this.handleSubmitFav.bind(this)
    this.journeyPlannerFormStart = this.journeyPlannerFormStart.bind(this);
    this.journeyPlannerFormEnd = this.journeyPlannerFormEnd.bind(this);
+   this.handleDate = this.handleDate.bind(this);
+   this.showMarkers = this.showMarkers.bind(this);
 
     //set the state of this componet dictionary of data we want to store
    this.state = {
+     formDisplay: true,
      sidebarOpen: false,
      start: '',
      stop: '',
@@ -38,9 +41,21 @@ export default class Main extends React.Component {
      destinationName: null,
      destLatLng: null,
      destLat: null,
-     destLng: null
+     destLng: null,
+     date: null,
+     startMarker: null,
+     endMarker: null,
+     routeShape: null
    };
  }
+
+ showMarkers(start, polylines, end){
+    this.setState({
+        startMarker: start,
+        routeShape: polylines,
+        endMarker: end
+    });
+}
 
  showDirections(directions){
    this.setState({
@@ -50,6 +65,10 @@ export default class Main extends React.Component {
     sidebarOpen: true
    });
  }
+
+ handleDate(date){
+   this.setState({date: date._d}, () => console.log(date, date._d.getTime()));
+ };
 
  //Gets input from form in Nav componet. This function is passed to the Nav componet below as a prop. ie. <Nav input={this.handleInputChange} />
  handleInputChange(event) {
@@ -72,7 +91,7 @@ export default class Main extends React.Component {
  }
  handleSubmitFav(event){
      event.preventDefault();
-     fetch('favourites/rath/ho')
+     fetch('/favourites/we/rfr',{method: "GET", credentials: 'same-origin'})
  }
 
  journeyPlannerFormStart(originName, startLat, startLng){
@@ -124,10 +143,10 @@ export default class Main extends React.Component {
     //checks weather the sidebar is open or not in the state of this component and passes the variables as componets to the Nav and Mapcontainer to use in their CSS properties.
     let isSidebarOpen = this.state.sidebarOpen ? true : false;
     let isMapContainerWide = this.state.sidebarOpen ? true : false;
-
+    //let isJourneyPlannerOpen = this.state.formDisplay ? false : true;
     return (
       <div id="mainContent" className="fullHeight">
-        <Nav time={this.state.eta} display={isSidebarOpen} submit={this.handleSubmit} input={this.handleInputChange} loading={this.state.loading} journeyPlannerFormStart={this.journeyPlannerFormStart} journeyPlannerFormEnd={this.journeyPlannerFormEnd} showDirections={this.state.showDirections} userDirections={this.state.userDirections} submit_fav={this.handleSubmitFav}/>
+        <Nav  showMarkers={this.showMarkers} handleDate={this.handleDate} time={this.state.eta} display={isSidebarOpen} submit={this.handleSubmit} input={this.handleInputChange} loading={this.state.loading} journeyPlannerFormStart={this.journeyPlannerFormStart} journeyPlannerFormEnd={this.journeyPlannerFormEnd} showDirections={this.state.showDirections} userDirections={this.state.userDirections} submit_fav={this.handleSubmitFav}/>
         <div className="fullHeight">
            <MapContainer display={isMapContainerWide} setTime={this.setTime} onClick={this.toggleNavBar} route={this.state} reset={this.resetDraw} showDirections={this.showDirections} showDirectionFromLocation={this.showDirectionFromLocation}/>
         </div>  

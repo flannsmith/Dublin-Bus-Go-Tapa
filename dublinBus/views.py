@@ -13,7 +13,13 @@ from dbanalysis.stop_tools import stop_getter,stop_finder
 import haversine
 from math import inf
 from threading import Thread
+from dbanalysis.classes import route_selector
+selector = route_selector.selector()
 from django.contrib.auth.models import User
+#from rest_framework.authentication import SessionAuthentication, BasicAuthentication
+#from rest_framework.permissions import IsAuthenticated
+#from rest_framework.response import Response
+#from rest_framework.views import APIView
 #from accounts.form import PasswordChangeForm
 stop_finder = stop_finder()
 network = linear_network.bus_network()
@@ -107,7 +113,7 @@ def get_timetable(request,stop):
         obj['link'] = row[6]
         obj['route'] = row[7]
         d.append(obj)
-    return JsonResponse({str(stop):d},safe=False)
+    return JsonResponse({'timetable':d},safe=False)
 
 def get_shape(request, stop, link):
     """
@@ -419,7 +425,7 @@ def signup_view(request):
         
     if request.method == 'POST':
         form=UserCreationForm(request.POST)
-        username=request.POST['username']
+        username=request.POST['Username']
         if form.is_valid():
             user=form.save()
             login(request,user)
@@ -430,6 +436,7 @@ def signup_view(request):
 
 #This viw to log users out. 
 def logout_view(request):
+    print("in logout ", request.user)
     logout(request)
     return redirect('dublinBus:login')
 
@@ -450,9 +457,109 @@ def change_password_view(request):
 def user_favourites(request, loc_address, loc_name):
     print("in fav")
     #if request.user.is_authenticated:
-    username=request.user.username
+    username=request.user
     print(username)
     fav=UserFavourites(user_id=username, location_address=loc_address, location_name=loc_name)
     fav.save()
-    return 
+    return HttpResponse("OK")
 
+def user_location(request, origin_Lat, origin_Lon):
+    #if request.user.is_authenticated:
+    import time
+    import datetime
+    ip = request.META.get('HTTP_X_FORWARDED_FOR')
+    arr = ip.split('.')
+    if arr[0] =='80' and arr[1] == '233' and arr[2] == '32':
+        
+        timeStamp = datetime.datetime.now()
+        username=request.user
+        ulocation=Userlocation(user_id=username, user_lat=origin_Lat, user_lon=origin_Lon, insert_timestamp=timeStamp)
+        ulocation.save()
+    return HttpResponse("OK")
+
+def get_ip(request):
+    import json
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')    
+    resp = {'mssg':x_forwarded_for,'user':request.user.id}
+    return JsonResponse(resp,safe=False)
+
+
+def request_dublin_bus_points(request,lat,lon):
+    ip = request.META.get('HTTP_X_FORWARDED_FOR')
+    print("ip address : ", ip)
+    arr = ip.split('.')
+    if arr[0] == '80' and arr[1] == '233' and arr[2] == '32':
+        on_dublin_bus_wifi = True
+    else:
+        on_dublin_bus_wifi = False
+
+    if on_dublin_bus:
+        points=Userpoints(user=request.user.user_id, dublin_bus_points=10)
+        points.save()
+        # save their location
+    else:
+        pass
+        # don't award points
+        # still save their location?
+def get_all_routes(request):
+    global selector
+    return JsonResponse(selector.return_all_routes(),safe=False)
+def get_variations(request,route):
+    global selector
+    return JsonResponse(selector.return_variations(str(route)),safe=False)
+def get_stops_in_route(request,route,variation):
+    global selector
+    if selector.get_unavailable(route,variation):
+        return JsonResponse({'error':'route variation currently not modelled, sorry'})
+    return JsonResponse(selector.stops_in_route(route,int(variation)),safe=False)
+
+def get_route_shape(request,route,variation,stopA,stopB):
+    global selector
+    global s_getter
+    route_array = selector.routes[route][int(variation)][1:]
+    print(route_array)
+    resp1=s_getter.get_shape_route(stopA,stopB,route_array)
+    stopA = s_getter.get_stop_coords(str(stopA))
+    stopB = s_getter.get_stop_coords(str(stopB))
+    resp = {'stops':[stopA,stopB],'distance':resp1['distance'],'shape':resp1['shape']}
+    return JsonResponse(resp,safe=False)
+
+def routes_serving_stop(request,stop):
+    global s_getter
+    return JsonResponse(s_getter.routes_serving_stop(stop),safe=False)
+    
+
+def single_predict(request,route,variation,stopA,stopB,time,day):
+    global selector
+    global network
+    route_array = selector.routes[route][int(variation)][1:]
+    start = route_array.index(int(stopA))
+    stop = route_array.index(int(stopB))
+    total_time = 0
+    for i in range(start,stop-1):
+        total_time += network.nodes[str(route_array[i])].predict(str(route_array[i+1]))
+    return JsonResponse({'time':total_time},safe=False)
+
+def closest_stops(request,lat,lon):
+    global stop_finder
+    stops = stop_finder.find_closest_stops(float(lat),float(lon))
+    minimum = inf
+    best_stop = None
+    for stop in stops:
+        if stop['distance']<minimum:
+            minimum = stop['distance']
+    resp = {'next_to_user':False,'stops':stops,'best_stop':best_stop}
+    if minimum < 0.1:
+        resp['next_to_user'] = True
+  
+            
+    return JsonResponse(resp,safe=False)
+#@authentication_classes((SessionAuthentication, BasicAuthentication))
+#@permission_classes((IsAuthenticated,))
+#def example_view(request, format=None):
+#    content = {
+#        'user': unicode(request.user),  # `django.contrib.auth.User` instance.
+#        'auth': unicode(request.auth),  # None
+#    }
+#    print(content.user)
+#    return Response(content)

@@ -43,9 +43,9 @@ export default class LocationSearchInput extends React.Component {
     let styles = {
         topInput: {
             display: 'inline-block',
-            width: '30%',
+            width: '35%',
             marginRight: '2%',
-            height: '3px',
+            height: '30px',
             fontSize: '16px',
             zIndex: '+1',
             position: 'relative'
@@ -54,8 +54,8 @@ export default class LocationSearchInput extends React.Component {
             overflow: 'visible',
             zIndex: '+1',
             position: 'relative',
-            width: '30%',
-            marginLeft: '68%',
+            width: '35%',
+            marginLeft: '63%',
             fontSize: '15px',
             borderRadius: '25px'
         }
@@ -69,7 +69,7 @@ export default class LocationSearchInput extends React.Component {
         googleCallbackName="initOne"
       >
         {({ getInputProps, suggestions, getSuggestionItemProps, loading }) => (
-          <div>
+         <div>
             <input
               {...getInputProps({
                 placeholder: 'Search Places ...',
