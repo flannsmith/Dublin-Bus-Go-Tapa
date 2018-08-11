@@ -8,44 +8,69 @@ from django.http import HttpResponse
 from django.db import models
 from dublinBus.models import *
 from django.http import JsonResponse
-from dbanalysis.network import linear_network
-from dbanalysis.stop_tools import stop_getter,stop_finder
+from dbanalysis.network import simple_network3
 import haversine
 from math import inf
 from threading import Thread
-from dbanalysis.classes import route_selector
-selector = route_selector.selector()
 from django.contrib.auth.models import User
+import pickle
+import os
+import time
+import datetime
+from django.db.models.aggregates import Max
+CREATE_NETWORK = False
+LOAD_NETWORK = True
+if CREATE_NETWORK:
+    network = simple_network2.simple_network()
+    network.generate_time_tables()
+    for node in network.nodes:
+        try:
+            network.nodes[node].timetable.concat_and_sort()
+        except:
+            pass
+    import pickle
+    with open('simple_network_concated','wb') as handle:
+        pickle.dump(network,handle,protocol=pickle.HIGHEST_PROTOCOL)
+elif LOAD_NETWORK:
+    from dbanalysis.network import simple_network2
+    network = simple_network2.simple_network(build=False)
+    with open('dublinBus/static/timetabledump.bin','rb') as handle:
+        network.nodes = pickle.load(handle)
+    
+    network.prepare_dijkstra()
+    #with open('simple_network_concated','rb') as handle:
+    #    network = pickle.load(handle)
+    #    network.prepare_dijkstra()
+
+def network_updater():
+    """
+    Function for loading updated network timetables. Run as thread.
+    """
+    global network
+    while True:
+        now = datetime.now()
+        seconds = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
+        if seconds < 8000:
+            time.sleep(8000-seconds)
+        elif seconds > 7200:
+            time.sleep((3600*24) - seconds + 8000)
+        while os.path.exist('static/network_lock'):
+            time.sleep(60)
+        with open('static/network_nodes.bin','rb') as handle:
+            nodes = pickle.load(handle)
+            while network.graph_lock:
+                time.sleep(20)
+                pass
+            network.nodes = nodes
+
+#updater = Thread(target=network_updater)
+#updater.start()
 #from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 #from rest_framework.permissions import IsAuthenticated
 #from rest_framework.response import Response
 #from rest_framework.views import APIView
 #from accounts.form import PasswordChangeForm
-stop_finder = stop_finder()
-network = linear_network.bus_network()
-s_getter = stop_getter()
-use_DJIKSTRA = False
-#graph lock variable blocks routefinding operations while a routefinding operation is ongoing
-graph_lock = False
-load_DJIKSTRA = True
-#these statements are all pretty redundant.
-# use djikstra builds the network from scratch
-#load djikstra gets it from a pickle file
-if use_DJIKSTRA:
-    import heapq
-    for n in network.nodes:
-        network.nodes[n].back_links = []
-        network.nodes[n].get_foot_links()
-        network.nodes[n].all_links = set([i for i in network.nodes[n].get_links() if i in network.nodes] + [i for i in network.nodes[n].foot_links if i in network.nodes])
-    
-    import pickle
-    with open('/home/student/networkpickle','wb') as handle:
-        pickle.dump(network,handle,protocol=pickle.HIGHEST_PROTOCOL)
-if load_DJIKSTRA:
-    import pickle
-    import heapq
-    with open('/home/student/networkpickle','rb') as handle:
-        network = pickle.load(handle)
+
 
 import datetime
 def dummyfloat(request,origin_Lat,origin_Lon,destination_Lat,destination_Lon):
@@ -103,17 +128,12 @@ def get_timetable(request,stop):
     """
     global network
     #get the date time at midnight
-    dt = datetime.datetime.now().replace(hour=0,minute=0,microsecond=0)
-    df = network.nodes[str(stop)].timetable.get_all_times()
-    d = []
-    for row in df.itertuples():
-        obj = {}
-        obj['arrive']=(dt+datetime.timedelta(0,row[1])).time()
-        obj['arrive_next']=(dt + datetime.timedelta(0,row[2])).time()
-        obj['link'] = row[6]
-        obj['route'] = row[7]
-        d.append(obj)
-    return JsonResponse({'timetable':d},safe=False)
+    dt = datetime.datetime.now()
+    d = network.get_stop_time_table(str(stop),dt)
+    if d is None:
+        return JsonResponse({'timetable':d,'error':True},safe=False)
+    else:
+        return JsonResponse({'timetable':d,'error':False},safe=False)
 
 def get_shape(request, stop, link):
     """
@@ -122,8 +142,8 @@ def get_shape(request, stop, link):
     """
     stop=str(stop)
     link=str(link)
-    global s_getter
-    obj = {'stop':stop,'link':link,'shape':s_getter.get_shape(stop,link)}
+    global network
+    obj = {'stop':stop,'link':link,'shape':network.s_getter.get_shape(stop,link)}
     if obj['shape'] == None:
         return JsonResponse({'error':'invalid link'},safe=False)
     return JsonResponse(obj, safe=False)
@@ -133,9 +153,9 @@ def get_route_shape(request,routename,vari=0):
     Returns all of the coordinates for the shape of an entire route.
     """
     global network
-    global s_getter
+    
     #the first element is always a word, so we have to cut that out here..
-    route = network.get_route(routename,variation=vari)
+    route = network.selector.routes[routename][vari]
     if route == None:
         return JsonResponse({'error':'invalid route'},safe=False)
     route=[str(r) for r in route ][1:]
@@ -144,11 +164,11 @@ def get_route_shape(request,routename,vari=0):
     stops = []
     for i in range(0, len(route)-1):
         try:
-            stops.append({'stop_id':route[i],'coords':s_getter.get_stop_coords(route[i])})
-            coords += s_getter.get_shape(route[i],route[i+1])
+            stops.append({'stop_id':route[i],'coords':network.s_getter.get_stop_coords(route[i])})
+            coords += network.s_getter.get_shape(route[i],route[i+1])
         except:
             coords.append({'err':'missing link'})
-    stops.append({'stop_id':route[-1],'coords':s_getter.get_stop_coords(route[-1])})
+    stops.append({'stop_id':route[-1],'coords':network.s_getter.get_stop_coords(route[-1])})
     obj = {'route':routename, 'stops':stops,'shape':coords}
     return JsonResponse(obj, safe=False)
 
@@ -156,256 +176,38 @@ def closest_stops(request,lat,lon):
     """
     Uses the stop finder class to find the closest (haversine distance) stop to a given lat/lon
     """
-    global stop_finder
-    resp = stop_finder.find_closest_stops(lat,lon)
+    global network
+    resp = network.stop_finder.find_closest_stops(lat,lon)
     return JsonResponse(resp,safe=False)
 
 def djikstra(request, origin,destination,starttime):
     return JsonResponse({'err':'function is redundant'})
 
-class dummy_stop():
-    '''
-    dummy user origin/destination  point that can behave like a stop
-    '''
-    def __init__(self):
-        self.weight=0
-        self.footlinks={}
-        self.back_links=[]
-        self.all_links=[]
-        self.stop_id=None
 
 def test_dijkstra(request):
     return dijkstra2(30000,53.3660,-6.2045,53.2822,-6.3162, text_response=True)
 
-def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat,\
-        destination_Lon,starttime=30000, text_response = True,\
-        walking_penalty=30,switch_bus_penalty=30):
-    """
-    Djikstra, but with the user's location and destination coordinates as the
+def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat, destination_Lon,day,starttime=30000, text_response = True,return_shape=False):
+    try:
+        origin_Lat = float(origin_Lat)
+        origin_Lon = float(origin_Lon)
+        starttime = float(starttime)
+        day = int(float(day))
+        if origin_Lon > 0:
+            origin_Lon = origin_Lon*-1
+        destination_Lat = float(destination_Lat)
+        destination_Lon = float(destination_Lon)
+        if destination_Lon > 0:
+            destination_Lon = destination_Lon * -1
     
-    start and end points
-
-    This is mess code, sorry. I will try to rewrite it in a better form later.
-    """
-    origin_Lat = float(origin_Lat)
-    origin_Lon = float(origin_Lon)
-    starttime = float(starttime)
-    if origin_Lon > 0:
-        origin_Lon = origin_Lon*-1
-    destination_Lat = float(destination_Lat)
-    destination_Lon = float(destination_Lon)
-    if destination_Lon > 0:
-        destination_Lon = destination_Lon * -1
-    
-    global network
-    global graph_lock
-    global stop_finder
-    from math import inf
-    while graph_lock:
-        #block if/while the graph is being cleared up
-        pass
-
-    o_stops = [s for s in \
-            stop_finder.find_closest_stops(origin_Lat,origin_Lon) \
-                    if s['stop_id'] in network.nodes]
-    origin_stops = {}
-    for stop in o_stops:
-        stopid = stop['stop_id']
-        distance = stop['distance']
-        origin_stops[stopid]=distance/5
-
-    d_stops  = [s for s in \
-            stop_finder.find_closest_stops(destination_Lat,destination_Lon) \
-                    if s['stop_id'] in network.nodes]
-    destination_stops = {}
-    for stop in d_stops:
-        stopid = stop['stop_id']
-        distance=stop['distance']
-        destination_stops[stopid]=distance/5
-       
-    #add links to the destination stop to the graph
-    print(destination_stops)
-    
-    for s in destination_stops:
-        network.nodes[s].foot_links['end'] = destination_stops[s]
-        network.nodes[s].all_links.add('end')
-    #set the weight of all nodes to infinity
-    for n in network.nodes:
-        network.nodes[n].weight = inf         
-
-    #create dummy stop nodes for the begining and origin
-    origin=dummy_stop()
-    origin.weight = starttime
-    origin.foot_links = origin_stops
-    origin.all_links=origin_stops
-    destination = dummy_stop()
-    destination.weight = inf
-    network.nodes['begin'] = origin
-    #add the origin stop to the graph
-    network.nodes['end'] = destination
-    current_node = 'begin'
-    current_time = starttime
-    visited = []
-    to_visit = []
-    count=0
-    #the main algorithm. Lots and lots of glue and spaghetti code here
-    current_route = 'w'
-    heapq.heappush(to_visit,[current_time,'begin','w'])    
-
-    while len(to_visit) > 0 and current_node != 'end':
-        node = network.nodes[current_node]
-        links = network.nodes[current_node].all_links
-        
-        for link in links:
-            if current_node != 'begin' and link in\
-                network.nodes[current_node].get_links() and\
-                hasattr(network.nodes[current_node].timetable, 'data'):
-                        
-
-                try:
-                    count+=1
-                    resp = network.nodes[current_node].timetable.get_next_departure(link,current_time)
-                   
-                    if resp is None:
-                        continue
-                    
-                    time = resp['actualtime_arr_to']
-                    route = resp['route']
-                   
-                    if time < starttime:
-                        time = time + (3600 * 24)
-                    if current_route != 'w' and current_route != route:
-                        #add time here penalty for switching bus route
-                        time += switch_bus_penalty
-                    
-                                
-                    if time < network.nodes[link].weight:
-                        network.nodes[link].weight = time
-                        network.nodes[link].back_links.append([current_node,route,time])                   
-                        heapq.heappush(to_visit,[time,link,route])
-
-                except:
-                    traceback.print_exc()
-                    
-                    
-
-            elif link in network.nodes[current_node].foot_links:
-                #can insert a walking penalty here. I have inserted '30' as a walking penalty, to 
-                #see if it makes any difference
-                if current_route != 'w':
-                    time = network.nodes[current_node].foot_links[link] + current_time + walking_penalty
-                else:
-                    time = network.nodes[current_node].foot_links[link] + current_time
-                if time < network.nodes[link].weight:
-                    network.nodes[link].weight = time
-                    #append a 'w' for route id as this is a walking link
-                    network.nodes[link].back_links.append([current_node,'w',time])
-                    heapq.heappush(to_visit,[time,link,'w'])
-
-
-        #remove the next node from the bottom of the heap
-        x = heapq.heappop(to_visit)
-        current_time = x[0]
-        current_node = x[1]
-        current_route = x[2]
-    if current_node == 'end':
-        print('found end')   
-    #retrace path to get the quickest route
-    weight = network.nodes['end'].weight
-    print(weight,starttime)
-    cur_node = 'end'
-    resp = [{'id':'end', 'route':'walking', 'data':\
-                {'lat':destination_Lat,\
-                'lon':destination_Lon,\
-                'stop_name':'destination'}}]
-    import json
-    stops_dict = json.loads(open('/home/student/dbanalysis/dbanalysis/resources/stops_trimmed.json','r').read())
-    while weight > starttime:
-        minweight = inf
-        print(weight)  
-        print(network.nodes[cur_node].back_links)      
-        for link in network.nodes[cur_node].back_links:
-            stop_id = link[0]
-            if network.nodes[stop_id].weight < minweight:
-                minweight = network.nodes[stop_id].weight
-                new_curnode = stop_id
-                route = link[1]
-                if route == 'w':
-                    route = 'walking'
-                weight = minweight
-             
-        if new_curnode != 'begin':
-            resp.append({'data':stops_dict[new_curnode],\
-            'id':new_curnode,\
-            'route':route,\
-            'time':weight})
-        else:  
-            resp.append({'id':'begin','data':\
-            {'lat':origin_Lat, 'lon':origin_Lon,'stop_name':'origin'},\
-            'route':'walking',\
-            'time':starttime})
-        cur_node = new_curnode
-        weight = minweight
-
-
-    if text_response:
-        #put together a readable version of the response data
-        text=[]
-        current_route = 'walking'
-        current_stop = resp[-1]
-        time = current_stop['time']
-        for i in range(len(resp)-2,-1,-1):
-            if resp[i]['route'] != current_route:
-                
-                if current_route == 'walking':
-                    text.append('Walk from '+\
-                                current_stop['data']['stop_name']\
-                                + ' to '\
-                                + resp[i]['data']['stop_name']\
-                                +'.'+\
-                                str((resp[i]['time']-time)//60)+\
-                                ' minutes')
-                 
-                
-                else:
-                    text.append('Take the ' + current_route\
-                                +' from '\
-                                + current_stop['data']['stop_name']\
-                                +' to '\
-                                + resp[i]['data']['stop_name'] +'.'+\
-                                str((resp[i]['time']-time)//60)+\
-                                ' minutes')
-
-                current_route = resp[i]['route']
-                current_stop = resp[i]
-                time = current_stop['time']
-        resp = {'data':resp,'text':text}
-                                                                
-            
-
-
-
-
-    #launch seperate thread to clean up the graph
-    print('the count is',count)
-    tear_down = Thread(target=tear_down_dijkstra,args=(destination_stops,))
-    tear_down.start()
+        global network
+        resp=network.dijkstra(day,starttime,origin_Lat,origin_Lon,destination_Lat,destination_Lon)
+        resp['shapes'] = network.dijkstra_shape(resp['data'])
+        resp['data'] = resp['stop_markers']
+        resp['error'] = False
+    except Exception as e:
+        resp = {'error':True,'error-type':str(e)}
     return JsonResponse(resp,safe=False)
-
-
-def tear_down_dijkstra(destination_stops):
-     #remove foot links and back links added to the graph
-    #this process should trigger a seperate thread so that we can return response quicker
-    
-    global network
-    global graph_lock
-    graph_lock = True
-    for stop in destination_stops:
-        network.nodes[stop].foot_links.pop('end',None)
-    for node in network.nodes:
-        network.nodes[node].back_links = []
-    graph_lock = False
-
 
 #This view is to log the users in 
 def login_view(request):
@@ -413,8 +215,8 @@ def login_view(request):
        form=AuthenticationForm(data=request.POST)
        if form.is_valid():
            user=form.get_user()
-           print('user from login view', user)
            login(request,user)
+           print(request.user.username)
            return redirect('dublinBus:home_page')
     else:
         form=AuthenticationForm()
@@ -425,16 +227,19 @@ def signup_view(request):
         
     if request.method == 'POST':
         form=UserCreationForm(request.POST)
-        username=request.POST['Username']
+        #username=request.POST['Username']
         if form.is_valid():
             user=form.save()
             login(request,user)
+            newUser=Userpoints(user_id=request.user, dublin_bus_points=0)
+            newUser.save()
             return redirect('dublinBus:home_page')
     else:
        form = UserCreationForm() 
     return render(request, 'signup.html',{'form': form})
 
 #This viw to log users out. 
+@login_required(login_url="/")
 def logout_view(request):
     print("in logout ", request.user)
     logout(request)
@@ -469,13 +274,21 @@ def user_location(request, origin_Lat, origin_Lon):
     import datetime
     ip = request.META.get('HTTP_X_FORWARDED_FOR')
     arr = ip.split('.')
+    onDublinBus=False
     if arr[0] =='80' and arr[1] == '233' and arr[2] == '32':
-        
-        timeStamp = datetime.datetime.now()
-        username=request.user
-        ulocation=Userlocation(user_id=username, user_lat=origin_Lat, user_lon=origin_Lon, insert_timestamp=timeStamp)
-        ulocation.save()
-    return HttpResponse("OK")
+        onDublinBus=True
+    #onDublinBus=True  
+    if onDublinBus:     
+     timeStamp = datetime.datetime.now()
+     username=request.user
+     ulocation=Userlocation(user_id=username, user_lat=origin_Lat, user_lon=origin_Lon, insert_timestamp=timeStamp)
+     ulocation.save()
+     user_details=Userpoints.objects.filter(user_id=request.user.id)
+     for user in user_details:
+        user.dublin_bus_points+=1
+        print(user.dublin_bus_points)
+        user.save()
+     return HttpResponse("OK")
 
 def get_ip(request):
     import json
@@ -502,58 +315,93 @@ def request_dublin_bus_points(request,lat,lon):
         # don't award points
         # still save their location?
 def get_all_routes(request):
-    global selector
-    return JsonResponse(selector.return_all_routes(),safe=False)
+    global network
+    return JsonResponse(network.selector.return_all_routes(),safe=False)
 def get_variations(request,route):
-    global selector
-    return JsonResponse(selector.return_variations(str(route)),safe=False)
+    data = network.selector.return_variations(str(route))
+    if data is None:
+        resp = {'error':True,'error-type':'invalid route'}
+    else:
+        resp = {'error':False,'data':data}
+    return JsonResponse(resp,safe=False)
 def get_stops_in_route(request,route,variation):
-    global selector
-    if selector.get_unavailable(route,variation):
-        return JsonResponse({'error':'route variation currently not modelled, sorry'})
-    return JsonResponse(selector.stops_in_route(route,int(variation)),safe=False)
+    global network
+    if network.selector.get_unavailable(route,variation):
+        return JsonResponse({'error':True,'error-type':'route unavailable'})
+    return JsonResponse(network.selector.stops_in_route(route,int(variation)),safe=False)
 
 def get_route_shape(request,route,variation,stopA,stopB):
-    global selector
-    global s_getter
-    route_array = selector.routes[route][int(variation)][1:]
-    print(route_array)
-    resp1=s_getter.get_shape_route(stopA,stopB,route_array)
-    stopA = s_getter.get_stop_coords(str(stopA))
-    stopB = s_getter.get_stop_coords(str(stopB))
-    resp = {'stops':[stopA,stopB],'distance':resp1['distance'],'shape':resp1['shape']}
+    global network
+    try:
+        route_array = network.selector.routes[route][int(variation)][1:]
+        print(route_array)
+        resp1=network.stop_getter.get_shape_route(stopA,stopB,route_array)
+        stopA = network.stop_getter.get_stop_coords(str(stopA))
+        stopB = network.stop_getter.get_stop_coords(str(stopB))
+        resp = {'stops':[stopA,stopB],'distance':resp1['distance'],'shape':resp1['shape'],'error':False}
+    except Exception as e:
+        resp = {'error':True,'error-type':str(e)}
     return JsonResponse(resp,safe=False)
 
 def routes_serving_stop(request,stop):
-    global s_getter
-    return JsonResponse(s_getter.routes_serving_stop(stop),safe=False)
+    global network
+    data = network.stop_getter.routes_serving_stop(stop)
+    if data is None:
+        return JsonResponse({'error':True},safe=False)
+    else:
+        return JsonResponse({'data':network.s_getter.routes_serving_stop(stop),'error':False},safe=False)
     
 
-def single_predict(request,route,variation,stopA,stopB,time,day):
-    global selector
+def single_predict(request,day,route,vnum,stopA,stopB,time):
+    
     global network
-    route_array = selector.routes[route][int(variation)][1:]
-    start = route_array.index(int(stopA))
-    stop = route_array.index(int(stopB))
-    total_time = 0
-    for i in range(start,stop-1):
-        total_time += network.nodes[str(route_array[i])].predict(str(route_array[i+1]))
-    return JsonResponse({'time':total_time},safe=False)
-
+    try:
+        total_time,departure_time = network.quick_predict(int(day),str(route),int(vnum),str(stopA),str(stopB),int(time))
+        arrival_time = total_time + int(departure_time)
+        total_hours = total_time // 3600
+        total_minutes = (total_time % 3600) // 60
+        arrivaldt = str(datetime.timedelta(seconds=arrival_time))
+        return JsonResponse({'travel time':{'hours':total_hours,'minutes':total_minutes},'arrival time':arrivaldt,'error':False,\
+                            'departure time':str(datetime.timedelta(seconds=departure_time))},safe=False)
+    
+   
+    except Exception as e:
+        return JsonResponse({'travel time':None,'arrival time':None,'error':True,'error-type':str(e)},safe=False)
 def closest_stops(request,lat,lon):
-    global stop_finder
-    stops = stop_finder.find_closest_stops(float(lat),float(lon))
+    global network
+    stops = network.stop_finder.find_closest_stops(float(lat),float(lon))
+    if stops is None:
+        resp = {'error':True}
+        return JsonResponse(resp,safe=False)
     minimum = inf
     best_stop = None
     for stop in stops:
         if stop['distance']<minimum:
             minimum = stop['distance']
-    resp = {'next_to_user':False,'stops':stops,'best_stop':best_stop}
+    resp = {'next_to_user':False,'stops':stops,'best_stop':best_stop,'error':False}
     if minimum < 0.1:
         resp['next_to_user'] = True
   
             
     return JsonResponse(resp,safe=False)
+
+#get user details
+def get_user_profile(request):
+    username=request.user.username
+    user_id=request.user.id
+    user_points=Userpoints.objects.filter(user_id=user_id)
+    for user in user_points:
+        u_points=user.dublin_bus_points
+    users_max_points=Userpoints.objects.order_by('-dublin_bus_points')[:2]
+    leaderboard=[]
+    for user in users_max_points:
+        username_queryset=User.objects.filter(id=user.id)
+        for user_in_queryset in username_queryset:
+            username_leaderboard=user_in_queryset.username 
+        leaderboard.append({'user': username_leaderboard, 'points':user.dublin_bus_points})
+        
+    return JsonResponse({'username':username, 'points':u_points, 'leaderboard':leaderboard}, safe=False)
+        
 #@authentication_classes((SessionAuthentication, BasicAuthentication))
 #@permission_classes((IsAuthenticated,))
 #def example_view(request, format=None):

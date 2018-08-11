@@ -5,10 +5,14 @@ import PlacesAutocomplete, {
 } from 'react-places-autocomplete';
 import {Marker} from "google-maps-react";
 
-export default class LocationSearchInput extends React.Component {
+export default class TimetableAuto extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { address: '' };
+    this.state = { 
+        address: '',
+        mode: false,
+        isGoogleLoaded: false
+      };
   }
 
   handleChange = address => {
@@ -20,30 +24,39 @@ export default class LocationSearchInput extends React.Component {
       .then(results => getLatLng(results[0]))
       .then(latLng => {
             console.log('Success', latLng);
-           	var e = null;
-    		//if (!this.props.route.sidebarOpen){
-        	//	this.props.onClick(e, this.props.xButton);
-    		// }
-			let destinationMarker = <Marker
-                id = "End Marker"
-                position={latLng}
-                title={this.state.address}
-                name={this.state.address}
-                onClick={this.onMarkerClick}
-              />;
-			this.props.changeMapState(latLng, this.state.address, destinationMarker, latLng.lat, latLng.lng);
-			this.props.showDirectionFromLocation();
-            let fromLocation=true;
-      		this.props.routeFinder(address, fromLocation); 
+            //fetch here for 5 closest stops
+            //chage options of dropdown.
+            let options = []
+            let lng = latLng.lng * -1;
+    fetch('/api/stopfinder/'+latLng.lat+'/'+lng)
+    .then((response) => response.json())
+    .then((responseJson) => {
+            console.log(responseJson);
+            responseJson.stops.map((stop) => {
+                let item = { value: stop.stop_id, label: stop.info.stop_name, className: 'list-group-item' };
+                options.push(item);
+            });
+            this.props.changeCloseStops(options);
+          });
         })
       .catch(error => console.error('Error', error));
   };
+
+ componentWillReceiveProps(nextProps) {
+     // You don't have to do this check first, but it can help prevent an unneeded render
+     if (nextProps.isGoogleLoaded !== this.state.isGoogleLoaded) {
+        this.setState({ 
+        mode: nextProps.isGoogleLoaded,
+        isGoogleLoaded: true
+         });
+      }
+   }
 
   render() {
     let styles = {
         topInput: {
             display: 'inline-block',
-            width: '35%',
+            width: '100%',
             marginRight: '2%',
             height: '30px',
             fontSize: '16px',
@@ -54,14 +67,15 @@ export default class LocationSearchInput extends React.Component {
             overflow: 'visible',
             zIndex: '+1',
             position: 'relative',
-            width: '35%',
-            marginLeft: '63%',
+            width: '100%',
             fontSize: '15px',
             borderRadius: '25px'
         }
-   } 
+   }
 
-   const searchOptions = {
+if(this.state.mode){
+    console.log("RETURNING AUTOCOMPLETE 1");
+    const searchOptions = {
        location: new google.maps.LatLng(53.350140, -6.266155),
        radius: 2000,
        types: ['address']
@@ -73,15 +87,14 @@ export default class LocationSearchInput extends React.Component {
         onChange={this.handleChange}
         onSelect={this.handleSelect}
         searchOptions={searchOptions}
-        googleCallbackName="initOne"
       >
         {({ getInputProps, suggestions, getSuggestionItemProps, loading }) => (
-         <div>
+        <div>
             <input
               {...getInputProps({
                 placeholder: 'Search Places ...',
                 className: 'location-search-input form-control',
-                style: styles.topInput 
+                style: styles.topInput
              })}
             />
             <div className="autocomplete-dropdown-container list-group" style={styles.dropDown}>
@@ -92,7 +105,7 @@ export default class LocationSearchInput extends React.Component {
                   : 'suggestion-item list-group-item';
                 // inline style for demonstration purpose
                 const style = suggestion.active
-                  ? { backgroundColor: '#F0FFF0', cursor: 'pointer', fontSize: '15px' }
+                  ? { backgroundColor: '#fafafa', cursor: 'pointer', fontSize: '15px' }
                   : { backgroundColor: '#ffffff', cursor: 'pointer', fontSize: '15px' };
                 return (
                   <div
@@ -110,5 +123,12 @@ export default class LocationSearchInput extends React.Component {
         )}
       </PlacesAutocomplete>
     );
+   } else {
+        return (
+            <div>
+                <h4>Loading</h4>
+            </div>
+         );
+    }
   }
 }

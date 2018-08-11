@@ -8,7 +8,13 @@ import {Marker} from "google-maps-react";
 export default class JourneySearchInput extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { address: '' };
+
+    this.state = { 
+        address: '', 
+        options: null,
+        mode: false,
+        isGoogleLoaded: false
+     };
   }
 
   handleChange = address => {
@@ -27,6 +33,16 @@ export default class JourneySearchInput extends React.Component {
         })
       .catch(error => console.error('Error', error));
   };
+
+  componentWillReceiveProps(nextProps) {
+     // You don't have to do this check first, but it can help prevent an unneeded render
+     if (nextProps.isGoogleLoaded !== this.state.isGoogleLoaded) {
+        this.setState({ 
+        mode: nextProps.isGoogleLoaded,
+        isGoogleLoaded: true
+        });
+      }
+   }
 
   render() {
     let styles = {
@@ -50,6 +66,14 @@ export default class JourneySearchInput extends React.Component {
      console.log('Google Maps API returned error with status: ', status)
      clearSuggestions()
     }
+ 
+if(this.state.mode){
+    console.log("RETURNING AUTOCOMPLETE");
+    const searchOptions = {
+       location: new google.maps.LatLng(53.350140, -6.266155),
+       radius: 2000,
+       types: ['address']
+    }
 
     return (
       <PlacesAutocomplete
@@ -57,6 +81,7 @@ export default class JourneySearchInput extends React.Component {
         onChange={this.handleChange}
         onSelect={this.handleSelect}
         onError={onError}
+        searchOptions={searchOptions}
         googleCallbackName="initTwo"
       >
         {({ getInputProps, suggestions, getSuggestionItemProps, loading }) => (
@@ -94,6 +119,13 @@ export default class JourneySearchInput extends React.Component {
         )}
       </PlacesAutocomplete>
     );
+   } else {
+        return (
+            <div>
+                <h4>Loading</h4>
+            </div>
+         );
+    }
   }
 }
 

@@ -2,6 +2,7 @@ import React from "react";
 import Calendar from "../components/calendar";
 import ReactLoading from "react-loading";
 import Dropdown from 'react-dropdown';
+import { Marker, Polyline } from "google-maps-react";
 
 export default class QuickTimes extends React.Component {
    constructor(props) {
@@ -15,6 +16,8 @@ export default class QuickTimes extends React.Component {
     this.fillStartStops = this.fillStartStops.bind(this);
     this.fillEndStops = this.fillEndStops.bind(this);
     this.getShapes = this.getShapes.bind(this);
+    this.handleDate = this.handleDate.bind(this);
+    this.submit = this.submit.bind(this);
 
     //Set the state of the component, a dictionary of data we want to use/manipulate.
    this.state = {
@@ -29,12 +32,72 @@ export default class QuickTimes extends React.Component {
      selectedStartStop: "Start stop:",
      selectedDestiantion: "Destination stop:",
      startStopName: null,
-     endStopName: null
+     endStopName: null,
+     date: null,
+     eta: null,
+     loading: false,
+     showDirections: false,
+     variationOpen: false,
+     startStopOpen: false,
+     destinationStopOpen: false,
+     calenderOpen: false,
+     submitOpen: false
    }
 }
 
+
+submit(event){
+
+    this.setState({
+       loading: true
+     });
+
+    event.preventDefault();        
+    let now = this.state.date;
+    let midnight = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0,0,0);
+    const timeInMilliseconds = now.getTime() - midnight.getTime();
+    let timeInSeconds = timeInMilliseconds / 1000;
+    console.log(timeInSeconds);
+    
+    let route = String(this.state.selected.value);
+    let variation = this.state.variation.value;
+    let start = this.state.selectedStartStop;
+    let end = this.state.selectedDestiantion;   
+
+    fetch('/api/predictor/'+now.getDay()+'/'+route+'/'+variation+'/'+start+'/'+end+'/'+timeInSeconds) //API call
+    .then((response) => response.json())
+    .then((responseJson) => {
+        let arrivalTime = responseJson["arrival time"];
+        console.log(arrivalTime);
+        this.setState({
+            loading: false,
+            eta: arrivalTime,
+            showDirections: true 
+         });
+    });
+}
+
+
+handleDate(date){
+   this.setState({
+    date: date._d,
+    submitOpen: true
+   }, () => console.log(date, date._d.getTime()));
+};
+
 _onSelect1(option) {
-  this.setState({selected: option}, this.fillVariations(option));
+  this.setState({
+    selected: option, 
+    variationOpen: true, 
+    startStopOpen: false, 
+    destinationStopOpen: false,
+    calenderOpen: false,
+    submitOpen: false
+  }, this.fillVariations(option));
 }
 
 fillVariations(option){
@@ -46,8 +109,9 @@ fillVariations(option){
   fetch('/api/routeselection/routevariations/'+variation)
     .then((response) => response.json())
     .then((responseJson) => {
+          console.log(responseJson);
           let i = 0;
-          responseJson[variation].map((variation) => {
+          responseJson.data[variation].map((variation) => {
             console.log(variation);
             let item = { value: i, label: variation, className: 'list-group-item'};
             i++;
@@ -62,7 +126,11 @@ fillVariations(option){
 _onSelect2(option) {
   this.setState({
     variation: option,
-    selectedVariation: option.value
+    selectedVariation: option.value,
+    startStopOpen: true,
+    destinationStopOpen: false,
+    calenderOpen: false,
+    submitOpen: false
     }, 
    this.fillStartStops(option));
 }
@@ -77,6 +145,7 @@ fillStartStops(option){
  fetch('/api/routeselection/routestops/'+route+'/'+stop)
     .then((response) => response.json())
     .then((responseJson) => {
+          console.log(responseJson);
           responseJson.map((variation) => {
             console.log(variation);
             let item = { value: variation.id, label: variation.name, className: 'list-group-item' };
@@ -92,7 +161,10 @@ fillStartStops(option){
 _onSelect3(option) {
   this.setState({
     selectedStartStop: option.value,
-    startStopName: option.label
+    startStopName: option.labe,
+    destinationStopOpen: true,
+    calenderOpen: false,
+    submitOpen: false
     },
   this.fillEndStops(option));
 }
@@ -119,7 +191,9 @@ fillEndStops(option){
 _onSelect4(option) {
   this.setState({
     selectedDestiantion: option.value,
-    endStopName: option.label
+    endStopName: option.label,
+    calenderOpen: true,
+    submitOpen: false
     },
    this.getShapes(option));
 }
@@ -137,14 +211,43 @@ getShapes(option){
  fetch('/api/routeselection/route_shape/'+route+'/'+variation+'/'+start+'/'+end)
     .then((response) => response.json())
     .then((responseJson) => {
-          responseJson.shape.map((stop) => {
-            
-            options.push(item);
-          });
-        this.setState({
-            startStops: options,
-            rawStartStops: responseJson
-         });
+        console.log(responseJson);
+        let startLat = responseJson.stops[0].lat;
+        let startLng = responseJson.stops[0].lon;
+        let destLat = responseJson.stops[1].lat;
+        let destLng = responseJson.stops[1].lon; 
+
+        let originMarker = <Marker
+                id="Origin Marker"
+                position={{lat: startLat, lng: startLng}}
+                title={this.state.startStopName}
+                name={this.state.startStopName}
+                onClick={this.props.mapRef.onMarkerClick}
+              />;
+        
+        let endMarker = <Marker
+                id="Destination Marker"
+                position={{lat: destLat, lng: destLng}}
+                title={this.state.endStopName}
+                name={this.state.endStopName}
+                onClick={this.props.mapRef.onMarkerClick}
+              />;
+
+        let shapes = [];
+
+        responseJson.shape.map((stop) => {
+            shapes.push({lat: stop.lat, lng: stop.lon});            
+        });        
+    
+        let busPolyline = <Polyline
+                path={shapes}
+                strokeColor="#0000FF"
+                strokeOpacity={0.8}
+                 strokeWeight={2} />;
+
+        let center = {lat: startLat, lng: startLng}; 
+        
+        this.props.setQuickTimes(originMarker, endMarker, null, busPolyline, center);
     });
 }
 
@@ -181,19 +284,35 @@ componentDidMount() {
         fontSize: '15px'
       },
       directions: {
-        display: this.props.showDirections ? 'block' : 'none'
+        display: this.state.showDirections ? 'block' : 'none'
       },
       loading: {
-        display: this.props.loading ? 'block' : 'none'
-      }
+        display: this.state.loading ? 'block' : 'none'
+      },
+     variation: {
+        display: this.state.variationOpen ? 'block' : 'none'
+     },
+     startStop: {
+        display: this.state.startStopOpen? 'block' : 'none'
+    },
+     destinationStop: {
+        display: this.state.destinationStopOpen? 'block' : 'none'
+    },
+    calenderOpen: {
+        display: this.state.calenderOpen ? 'block' : 'none'
+    },
+    submitOpen: {
+        display: this.state.submitOpen ? 'block' : 'none'
+    }
     }
 
+    let variation = this.state.variationOpen ? 'variationOpen form-group' : 'variationClosed form-group';
     const defaultOption = null;
 
     return (
       <div style={styles.journeyPlannerContent} >
         {/* When form is submitted we call this.props.submit which in the Nav compoent calls this.props.submit which calls the submit function in the Main componet */}
-        <form onSubmit={this.props.submit}>
+        <form onSubmit={this.submit}>
             <div className="form-group">
                 <Dropdown 
                    className='quickTimesDropdown' 
@@ -204,9 +323,9 @@ componentDidMount() {
                    placeholder={this.state.selected.value} 
                 />
             </div>
-            <div className="form-group">
+            <div className="form-group" style={styles.variation}>
                 <Dropdown
-                   className='quickTimesDropdown'
+                   className="quickTimesDropdown"
                    menuClassName='list-group makeScroll'
                    options={this.state.variations}
                    onChange={this._onSelect2}
@@ -214,7 +333,7 @@ componentDidMount() {
                    placeholder={this.state.selectedVariation}
                 /> 
             </div>
-            <div className="form-group">
+            <div className="form-group" style={styles.startStop}>
                 <Dropdown
                    className='quickTimesDropdown'
                    menuClassName='list-group makeScroll'
@@ -224,7 +343,7 @@ componentDidMount() {
                    placeholder={this.state.selectedStartStop}
                 /> 
             </div>
-            <div className="form-group">
+            <div className="form-group" style={styles.destinationStop}>
                 <Dropdown
                    className='quickTimesDropdown'
                    menuClassName='list-group makeScroll'
@@ -234,10 +353,10 @@ componentDidMount() {
                    placeholder={this.state.selectedDestiantion}
                 /> 
             </div>
-            <div className="form-group">
-                <Calendar handleDate={this.props.handleDate} placeholder="Date & Time" />
+            <div className="form-group" style={styles.calenderOpen}>
+                <Calendar handleDate={this.handleDate} placeholder="Date & Time" />
             </div>
-            <div className="form-group">
+            <div className="form-group" style={styles.submitOpen}>
                 <button type="submit" className="btn btn-info" style={styles.formSubmit}> Submit </button>
             </div>
             <div style={styles.loading}>
@@ -246,7 +365,7 @@ componentDidMount() {
             <div style={styles.directions}>
                 <li className="list-group-item">
                     <p className="lead">ETA:</p>
-                    <p className="lead">{this.props.eta}</p>
+                    <p className="lead">{this.state.eta}</p>
                 </li>
             </div>
         </form>
@@ -254,5 +373,3 @@ componentDidMount() {
     )
   }
 }
-
-

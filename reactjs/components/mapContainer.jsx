@@ -5,6 +5,8 @@ import Button_Icon_BlueSky from "../../dublinBus/static/images/Button_Icon_BlueS
 //import stops from './stops.js';
 import LocationSearchInput from "./LocationSearchInput.jsx";
 import Clock from "./clock.jsx";
+import ReactLoading from "react-loading";
+import Toggle from 'react-bootstrap-toggle';
 
 export class MapContainer extends Component {
   constructor(props) {
@@ -23,6 +25,7 @@ export class MapContainer extends Component {
     this.tick = this.tick.bind(this);
     this.sendLocation = this.sendLocation.bind(this);
     this.resetStartTimer = this.resetStartTimer.bind(this);    
+    this.toggleMap = this.toggleMap.bind(this);
 
     //Set the state of the component, a dictionary of data we want to use/manipulate.
     this.state = {
@@ -52,13 +55,63 @@ export class MapContainer extends Component {
       endMarker: null,
       timer: false,
       stopTimer: false,
-      time: 1
+      time: 1,
+      notLoadedYet: true,
+      directions: false,
+      timetables: false,
+      user: false,
+      toggleActive: false
     };
   }
 
   componentDidMount(){
     //Function that runs when componet "mounts" or binds to the actual DOM.
     this.geocoder = new google.maps.Geocoder();
+    this.props.setMapRef(this);
+  }
+
+  toggleMap(){
+    if(this.props.route.showDirections){
+        this.props.toggleDirections();
+        this.setState({
+            directions: true,
+            timetables: false,
+            user: false
+        });      
+     }
+
+    else if(this.props.route.displayTimetables){
+         this.props.toggleTimetable();
+         this.setState({
+            timetables: true,
+            directions: false,
+            user: false,
+        });
+    }
+
+    else if(this.props.route.displayUser){
+        this.props.toggleUser();
+        this.setState({
+            user: true,
+            timetables: false,
+            directions: false,
+        });
+    }
+
+    else if(this.state.directions){
+        this.props.toggleDirections();        
+    }
+    
+    else if(this.state.timetables){
+        this.props.toggleTimetable();
+    }
+
+    else if(this.state.user){
+        this.props.toggleUser();
+    }
+
+
+    this.setState({ toggleActive: !this.state.toggleActive });
   }
 
   tick(){
@@ -94,12 +147,12 @@ export class MapContainer extends Component {
   }
 
   changeMapState(results, address, destinationMarker, lat, lng){
+    console.log(results, address, destinationMarker, lat, lng);  
+    this.props.setStartEndMarker(null, destinationMarker);
     this.setState({
           center : results, //chages center of map and center marker
           searchName : address, //chages search name <p> value
           zoom: 16,
-          endMarker: destinationMarker,
-          startMarker: null,
           destinationLat: lat,
           destinationLng: lng
         }
@@ -179,12 +232,11 @@ export class MapContainer extends Component {
      />
 
     console.log(originName, startLat, startLng, destinationName, destLat, destLng, destLatLng);
+    this.props.setStartEndMarker(originMarker, destinationMarker);
     this.setState({
-        startMarker: originMarker,
         zoom: 16, 
         startLat: startLat,
         startLon: startLng,
-        endMarker: destinationMarker,
         center : destLatLng, //chages center of map and center marker
         searchName : destinationName, //chages search name <p> value
         destinationLat: destLat,
@@ -253,7 +305,7 @@ routeFinder(address, fromLocation){
   }
   
   let timeInSeconds = 0;
-
+  let dayOfWeek = null;
   //Block below is to get the current time of day in seconds from users device to be used in API call.
   if (fromLocation == true){
      let now = new Date();
@@ -264,6 +316,8 @@ routeFinder(address, fromLocation){
         0,0,0);
     const timeInMilliseconds = now.getTime() - midnight.getTime();
     timeInSeconds = timeInMilliseconds / 1000; // Slow can optimize this ^^, too many uneeded steps.
+    dayOfWeek = now.getDay();
+    dayOfWeek = dayOfWeek.toFixed(2);
   } else {
      let now = this.props.route.date;
      let midnight = new Date(
@@ -274,20 +328,24 @@ routeFinder(address, fromLocation){
     const timeInMilliseconds = now.getTime() - midnight.getTime();
     timeInSeconds = timeInMilliseconds / 1000; // Slow can optimize this ^^, too many uneeded steps.
     timeInSeconds = timeInSeconds.toFixed(2);
+    dayOfWeek = now.getDay();
+    dayOfWeek = dayOfWeek.toFixed(2);
   }
 
-  let routeShape = {}; //holds all the direction objects
+  //let routeShape = {}; //holds all the direction objects
   let stops = []; //holds all markers for a route
-  console.log("fetch('/api/routefinder/"+originLat+"/"+originLng+"/"+destLat+"/"+destLng+"/"+timeInSeconds+")");
-  fetch('/api/routefinder/'+originLat+'/'+originLng+'/'+destLat+'/'+destLng+'/'+timeInSeconds) //API call
+  console.log("fetch('/api/routefinder/"+originLat+"/"+originLng+"/"+destLat+"/"+destLng+"/"+dayOfWeek+'/'+timeInSeconds+")");
+  fetch('/api/routefinder/'+originLat+'/'+originLng+'/'+destLat+'/'+destLng+'/'+dayOfWeek+'/'+timeInSeconds) //API call
     .then((response) => response.json())
     .then((responseJson) => {
-      
+      console.log(responseJson); 
+
+/*  Below block of code now redudant as backend code provides walking and bus objects already broken up, left here as backup if new api fails.
+
       //In the below block of code we loop through all the data and store each bus route and walking route (which contain location objects) in its own array which in turn are all stored in the routeShape object. From this then we have a route shape object that has all the sub journeys of a route (arrays) as properties.
       let isPreviousRouteWalking = false; 
       let arrayID = "";
       let notFirstStop = false;
-      //CHANGE THIS make api "lng" not "lon" and this computation is undeeded
       responseJson.data.reverse(); //needed to reverse as API reutrns start as end CHANGE API?
       responseJson.data.map((stop) => { //Loops through the json directions data
         if (isPreviousRouteWalking && stop.route == "walking") {
@@ -309,7 +367,8 @@ routeFinder(address, fromLocation){
             isPreviousRouteWalking = false;
           }
         }
-
+*/
+        responseJson.data.map((stop) => { //Loops through the json marker data
 
         if ( stop.id == "end" || stop.id == "begin"){
           //do nothing already have stop and start markers
@@ -327,24 +386,57 @@ routeFinder(address, fromLocation){
           );
         }
       });
-        
-      console.log(stops);
-      console.log(stops[stops.length -1]);  
-      let lastMarker = stops[stops.length -1];
-      let time = lastMarker.props.time;
-      console.log(time);
-      this.props.setTime(time);
- 
-      let directionsPolylines = [];
-      for (var i in routeShape){
-        if (routeShape[i][0].color == "walking"){
-          directionsPolylines.push(
+    
+     let directionsPolylines = []; 
+     responseJson.shapes.bus.map((stop) => {
+        directionsPolylines.push(
           <Polyline
-          path={routeShape[i].slice(1,)}
+          path={stop}
           strokeColor="#ff0707"
           strokeOpacity={0.8}
           strokeWeight={2}
-          key={i}/>
+          />
+        );
+     });
+   
+     let lineSymbol = {
+          path: 'M 0,-1 0,1',
+          strokeOpacity: 1,
+          scale: 4
+        }; 
+
+     responseJson.shapes.walk.map((stop) => {
+        directionsPolylines.push(
+          <Polyline
+          path={stop}
+          strokeColor="#0000FF"
+          strokeOpacity={0}
+          icon={{
+            icon: lineSymbol,
+            offset: '0',
+            repeat: '20px'
+          }}
+          strokeWeight={2}
+          />
+        );
+     });
+      
+      console.log(stops);
+      console.log(stops[stops.length -1]);
+      console.log(responseJson.data[responseJson.data.length -1]);
+      let lastMarker = responseJson.data[responseJson.data.length -1];
+      let stopTime = new Date(lastMarker.time * 1000).toISOString().substr(11, 8);
+      this.props.setTime(stopTime);
+ 
+  /*    for (var index in routeShape){
+        if (routeShape[index][0].color == "walking"){
+          directionsPolylines.push(
+          <Polyline
+          path={routeShape[index].slice(1,)}
+          strokeColor="#ff0707"
+          strokeOpacity={0.8}
+          strokeWeight={2}
+          key={index}/>
         );
         } else {
           directionsPolylines.push(
@@ -357,21 +449,19 @@ routeFinder(address, fromLocation){
         );
         }
 
-      }
+      } */
 
       let directions = [];
       responseJson.text.map((stop) => {
-        directions.push(<li class="list-group-item">{stop}</li>)
+        directions.push(<li className="list-group-item">{stop}</li>)
       });
      
       this.props.showDirections(directions);
-
+      this.props.setDirectionMpolyline(stops, directionsPolylines);
       this.setState({
         // center: routeShape[0][0],
         zoom: 17,
         searchName: address,
-        directionMarkers: stops,
-        polyline: directionsPolylines,
       });
     }).catch(function(error) {
       console.log(error);
@@ -381,7 +471,7 @@ routeFinder(address, fromLocation){
 
   requestLocation(){
     //Function to find the current location of user from browser
-
+    console.log("requestingLocation");
     var self = this;
 
     var options = {
@@ -404,6 +494,10 @@ routeFinder(address, fromLocation){
          });    
       }
 
+     console.log("setting current location");      
+
+      self.props.setCurrentLocation(geolat, geolng);      
+
       self.setState({
         // center: { ...self.state.center, lat: geolat, lon: geolng},
         //center: newCenter,
@@ -421,6 +515,7 @@ routeFinder(address, fromLocation){
     function error(err){
       // return the error message
       let msg = 'Error: ' + err + ' :(';
+      console.log(msg);
       self.setState({
         searchName: msg,
         alreadyRequestedlocation: true
@@ -492,13 +587,13 @@ routeFinder(address, fromLocation){
         zIndex: '+1',
       },
       directions: {
-        display: this.state.showDirections ? 'block' : 'none', //checks weather directions for a route is needed.
-        position: 'absolute',
-        backgroundColor: 'white',
-        height: '100%',
-        marginLeft: '85%',
-        width: '15%',
-        padding: '10px',
+        display: this.props.route.showDirections ? 'block' : 'none', //checks weather directions for a route is needed.
+      //  position: 'absolute',
+        //backgroundColor: 'white',
+       // height: '100%',
+       // marginLeft: '85%',
+       // width: '15%',
+       // padding: '10px',
       },
       container: {
          display: 'inline-block',
@@ -512,9 +607,14 @@ routeFinder(address, fromLocation){
         paddingTop: '15px',
         paddingBottom: '15px',
         textAlign: 'right',
-        backgroundColor: 'rgb(3, 79, 152)',
+        // Original blue: backgroundColor: 'rgb(3, 79, 152)',
+        backgroundColor: 'rgb(255, 204, 1)',
         height: '60px'
       },
+      buttonDiv: {
+        marginBottom: '-37px',
+        zIndex: '+1'
+     },
       topInput: {
         display: 'inline-block',
         width: '30%',
@@ -534,15 +634,49 @@ routeFinder(address, fromLocation){
         display: 'none'
       },
       mapBox: {
-        zIndex: '-1'
+        zIndex: '-1',
+        display: this.props.route.loading ? 'none' : this.props.route.showDirections ? 'none' : this.props.route.displayTimetables ? 'none' : this.props.route.displayUser ? 'none' : 'block',
       },
+      mapToggleButton: {
+        zIndex: '+1',
+        marginLeft: '15px'
+     },
       loading: {
-        display: this.state.showLoading ? 'block' : 'none',
+        display: this.props.route.loading ? 'block' : 'none',
+      },
+      timetable: {
+        display: this.props.route.displayTimetables ? 'block' : 'none',
+      },
+      user: {
+        display: this.props.route.displayUser ? 'block' : 'none',
+    },
+      table: {
+        marginTop: '50px'
       }
     }
+
+    let mapContainer_class = this.props.display ? "mapContainerOpen" : "mapContainerClosed";
+    let googleMap_class = this.props.display ? "googleMapOpen" : "googleMapClosed";
+    
+
     //if map is not loaded do this
     if (!this.props.google) {
       return <div>Loading...</div>;
+    }
+
+    if(this.props.route.center){
+         this.setState({
+          center: this.props.route.center
+        });
+        this.props.resetCenter();        
+    }
+    
+    if (this.props.google && this.state.notLoadedYet) {
+      console.log("Google is Loaded");
+      this.setState({
+          notLoadedYet: false
+        });
+      this.props.isGoogleLoaded(true);
     }
 
     if (!this.state.alreadyRequestedlocation){
@@ -602,7 +736,7 @@ routeFinder(address, fromLocation){
         //    });
 
       return (
-       <div style={styles.googleMap} >
+       <div className={googleMap_class} >
                 <div style={styles.form}>
                         <div ref='xButton' onClick={e => this.props.onClick(e, this.refs.xButton)} style={styles.container}>
                              <div style={styles.divButton}></div>
@@ -611,7 +745,45 @@ routeFinder(address, fromLocation){
                              <div className="bar3"></div>
                           </div> 
                           <LocationSearchInput routeFinder={this.routeFinder} route={this.props.route} changeMapState={this.changeMapState} onMarkerClick={this.onMarkerClick}  onClick={this.props.onClick} showDirectionFromLocation={this.props.showDirectionFromLocation} xButton={this.refs.xButton} />
-                  </div>
+        </div>
+
+        <div style={styles.buttonDiv}>
+            <Toggle
+                onClick={this.toggleMap}
+                on={<h2>Map</h2>}
+                off={<h2>Details</h2>}
+                height="30px"
+                width="55px"
+                size="xs"
+                style={styles.mapToggleButton}
+                offstyle="danger"
+                active={this.state.toggleActive}
+                disabled={this.props.route.mapToggleDisabeled}
+            />
+         </div>
+
+         <div style={styles.loading}>
+           <ReactLoading type={"bubbles"} color="rgb(3, 79, 152)" height={'100%'} width={'100%'}/>
+         </div>
+
+         <div style={styles.directions}>
+            <li className="list-group-item">
+            <p className="lead">ETA:</p>
+            <p className="lead">{this.props.route.eta}</p>
+           </li>
+            {this.props.route.userDirections}
+          </div>
+          
+            <div style={styles.user}>
+                {this.props.route.userDetails}
+            </div>
+
+          <div style={styles.timetable}>
+            <table className="table" style={styles.table}>
+            {this.props.route.timetables}
+            </table>
+         </div>
+
           <div id="mapBox" className="fullHeight" style={styles.mapBox} >
             <Clock stopTimer={this.state.stopTimer} tick={this.tick} timer={this.state.timer} resetStartTimer={this.resetStartTimer} /> 
             <Map
@@ -624,8 +796,6 @@ routeFinder(address, fromLocation){
               center={this.state.center}
               onClick={this.onMapClicked}>
               
-              {/* {markers} */}
-              
               {/* Current location Marker */}
               <Marker
                 position={{lat: this.state.currentLocationLat, lng: this.state.currentLocationLon}}
@@ -633,9 +803,9 @@ routeFinder(address, fromLocation){
                 name="You are Here"
                 onClick={this.onMarkerClick}
               /> 
-              {this.state.startMarker}
-              {this.state.directionMarkers}
-              {this.state.endMarker}
+              {this.props.route.startMarker}
+              {this.props.route.directionMarkers}
+              {this.props.route.endMarker}
               <InfoWindow
                 marker={this.state.activeMarker}
                 visible={this.state.showingInfoWindow}>
@@ -644,7 +814,7 @@ routeFinder(address, fromLocation){
                   <h4>{this.state.selectedPlace.time}</h4>
                 </div>
               </InfoWindow>
-              {this.state.polyline}
+              {this.props.route.polyline}
               </Map>
             </div>
           </div>

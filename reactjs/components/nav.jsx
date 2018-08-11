@@ -8,26 +8,16 @@ export default class Nav extends React.Component {
  constructor(props) {
     super(props);
     
-    this.toggleJourneyPlanner = this.toggleJourneyPlanner.bind(this);
     this.toggleQuickTimes = this.toggleQuickTimes.bind(this);
     this.toggleFavourites = this.toggleFavourites.bind(this);
     this.toggleTimetables = this.toggleTimetables.bind(this);
     this.logoutUser = this.logoutUser.bind(this) 
 
     this.state = {    
-        journeyPlanner: false,
         quickTimes: false,
         favourites: false,
         timetables: false
     };
-}
-
-toggleJourneyPlanner(){
-    console.log(this.state.journeyPlanner);
-    console.log(!this.state.journeyPlanner);
-    this.setState({
-        journeyPlanner: !this.state.journeyPlanner
-    });    
 }
 
 toggleQuickTimes(){
@@ -74,7 +64,7 @@ logoutUser(){
         position: 'relative',
       },
       journeyPlanner: {
-        display: this.state.journeyPlanner ? 'block' : 'none',
+        display: this.props.journeyPlanner ? 'block' : 'none',
       },
       quickTimes: {
         display: this.state.quickTimes ? 'block' : 'none',
@@ -86,24 +76,33 @@ logoutUser(){
         display: this.state.timetables ? 'block' : 'none',
       }
     }
+
+    let nav_class = this.props.display ? "sidebarOpen" : "sidebarClosed";
+    let button_class = this.props.display ? "buttonOpen" : "buttonClosed";
+    
     return (
-      <nav style={styles.sidebar}>
+      <nav className={nav_class}>
         <div style={styles.menu}>
-           <h3>Dublin Bus</h3>
-        </div>
+           <div ref='yButton' onClick={e => this.props.onClick(e, this.refs.yButton)} className={button_class}>
+                  <div className="divButton"></div>
+                  <div className="bar1side"></div>
+                  <div className="bar2side"></div>
+                  <div className="bar3side"></div>
+             </div>
+           <img src={'/static/images/GoTapaLogo.png'} /> 
         <div className="panel panel-default">
-          <div className="panel-heading" onClick={this.toggleJourneyPlanner}>
+          <div className="panel-heading" onClick={this.props.toggleJourneyPlanner}>
              <h3 className="panel-title">Journey Planner</h3>
            </div>
            <div className="panel-body" style={styles.journeyPlanner}>
             {/* Form compoent that passes submit function and input funciton as props, which in turn is a prop of this fucntion. The Main componet holds the data for these funcions. */}
-               <Form handleDate={this.props.handleDate} submit={this.props.submit} eta={this.props.time} loading={this.props.loading} journeyPlannerFormStart={this.props.journeyPlannerFormStart} journeyPlannerFormEnd={this.props.journeyPlannerFormEnd} showDirections={this.props.showDirections} input={this.props.input} userDirections={this.props.userDirections} />
+               <Form secondLocationOpen={this.props.secondLocationOpen} calenderOpen={this.props.calenderOpen} submitOpen={this.props.submitOpen} isGoogleLoaded={this.props.isGoogleLoaded} handleDate={this.props.handleDate} submit={this.props.submit} eta={this.props.time} loading={this.props.loading} journeyPlannerFormStart={this.props.journeyPlannerFormStart} journeyPlannerFormEnd={this.props.journeyPlannerFormEnd} showDirections={this.props.showDirections} input={this.props.input} userDirections={this.props.userDirections} />
             </div>
             <div className="panel-heading" onClick={this.toggleQuickTimes}>
              <h3 className="panel-title">Quick Times</h3>
             </div>
             <div className="panel-body" style={styles.quickTimes}>
-             <QuickTimes showMarkers={this.props.showMarkers} />
+             <QuickTimes mapRef={this.props.mapRef} setQuickTimes={this.props.setQuickTimes} />
              </div>
             <div className="panel-heading" onClick={this.toggleFavourites}>
                 <h3 className="panel-title">Favourites</h3>
@@ -115,11 +114,15 @@ logoutUser(){
                 <h3 className="panel-title">Timetables</h3>
             </div>
             <div className="panel-body" style={styles.timetables}>
-                <Timetables />
+                <Timetables isGoogleLoaded={this.props.isGoogleLoaded} currentLocationLat={this.props.currentLocationLat} currentLocationLon={this.props.currentLocationLon} setTimeTables={this.props.setTimeTables} />
+            </div>
+            <div className="panel-heading" onClick={this.props.userProfile}>
+                <h3 className="panel-title">View Your profile</h3>
             </div>
             <div className="panel-heading" onClick={this.logoutUser}>
                 <h3 className="panel-title">Logout</h3>
             </div>
+          </div>
         </div>
       </nav>
     )

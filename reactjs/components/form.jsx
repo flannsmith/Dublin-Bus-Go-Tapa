@@ -31,28 +31,38 @@ export default class Form extends React.Component {
       },
       loading: {
         display: this.props.loading ? 'block' : 'none'
-      }
+      },
+      secondLocation: {
+        display: this.props.secondLocationOpen ? 'block' : 'none'
+    },
+      calender: {
+        display: this.props.calenderOpen ? 'block' : 'none'
+    },
+     submitOpen: {
+        display: this.props.submitOpen ? 'block' : 'none'
     }
+    }
+
     return (
       <div style={styles.journeyPlannerContent} >
         {/* When form is submitted we call this.props.submit which in the Nav compoent calls this.props.submit which calls the submit function in the Main componet */}
         <form onSubmit={this.props.submit}>
        		<div className="form-group">
     			{/* Same function call process as above but for input */}
-                <JourneySearchInput journeyPlannerFormStart={this.props.journeyPlannerFormStart} />
+                <JourneySearchInput isGoogleLoaded={this.props.isGoogleLoaded} journeyPlannerFormStart={this.props.journeyPlannerFormStart} />
 				{/*<input type="text" style={styles.input} name="start" className="form-control" placeholder="Departing from: eg. Abbey Street" onChange={this.props.input} /> */}
  			 </div>
-			<div className="form-group">
-                <JourneySearchInput journeyPlannerFormEnd={this.props.journeyPlannerFormEnd} />
+			<div className="form-group" style={styles.secondLocation}>
+                <JourneySearchInput isGoogleLoaded={this.props.isGoogleLoaded} journeyPlannerFormEnd={this.props.journeyPlannerFormEnd} />
                {/* <input type="text"  style={styles.input} name="stop" className="form-control" placeholder="Destination: eg. Howth" onChange={this.props.input} /> */}
              </div> 
-          <div className="form-group">
-			<Calendar handleDate={this.props.handleDate} placeholder="Date & Time" />
+          <div className="form-group" style={styles.calender}>
+			<Calendar handleDate={this.props.handleDate} />
       	  </div> 
-		<div className="form-group">
+		<div className="form-group" style={styles.submitOpen}>
 			<button type="submit" className="btn btn-info" style={styles.formSubmit}> Submit </button>
           </div>
-        <div style={styles.loading}>
+        {/*<div style={styles.loading}>
            <ReactLoading type={"bubbles"} color="rgb(3, 79, 152)" height={'100%'} width={'100%'}/>
           </div>        
          <div style={styles.directions}>
@@ -61,7 +71,7 @@ export default class Form extends React.Component {
             <p className="lead">{this.props.eta}</p>
            </li>
             {this.props.userDirections}
-          </div>    
+          </div>  */}  
         </form>
       </div>
     )

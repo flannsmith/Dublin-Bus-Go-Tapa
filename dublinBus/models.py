@@ -82,7 +82,7 @@ class UserFavourites(models.Model):
     location_name=models.CharField(max_length=20)
     
 class Userpoints(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     dublin_bus_points = models.IntegerField()
 
 class Userlocation(models.Model):
@@ -93,3 +93,24 @@ class Userlocation(models.Model):
 
     class Meta:
         unique_together = (('user_id', 'insert_timestamp'),)
+
+class Weatherdetails(models.Model):
+    weather_date = models.CharField(max_length=20)
+    rain = models.DecimalField(max_digits=7, decimal_places=4)
+    temp = models.DecimalField(max_digits=7, decimal_places=2)
+    wetb = models.DecimalField(max_digits=7, decimal_places=2)
+    dewpt = models.DecimalField(max_digits=7, decimal_places=2)
+    vappr = models.DecimalField(max_digits=7, decimal_places=2)
+    rhum = models.IntegerField()
+    msl = models.DecimalField(max_digits=7, decimal_places=2)
+
+class WeatherForecast(models.Model):
+    date = models.CharField(max_length=20)
+    rain = models.DecimalField(max_digits=10, decimal_places=3)
+    temp = models.DecimalField(max_digits=10, decimal_places=3)
+    wetb = models.DecimalField(max_digits=10, decimal_places=3)
+    dewpt = models.DecimalField(max_digits=10, decimal_places=3)
+    vappr = models.DecimalField(max_digits=10, decimal_places=3)
+    rhum = models.IntegerField()
+    msl = models.DecimalField(max_digits=10, decimal_places=3)
+

@@ -33,10 +33,12 @@ urlpatterns = [
         path(r'api/shapes/route/<slug:routename>/<int:vari>',views.get_route_shape, name='route-shape'),
         #route finder
         path(r'api/testroutefinder',views.test_dijkstra,name='tester'),
-        url(r'api/routefinder/(?P<origin_Lat>\d+\.\d+)/(?P<origin_Lon>\d+\.\d+)/(?P<destination_Lat>\d+\.\d+)/(?P<destination_Lon>\d+\.\d+)/(?P<starttime>\d+\.\d+)$',views.dijkstra2,name='djikstra-djikstra'),
+        url(r'api/routefinder/(?P<origin_Lat>\d+\.\d+)/(?P<origin_Lon>\d+\.\d+)/(?P<destination_Lat>\d+\.\d+)/(?P<destination_Lon>\d+\.\d+)/(?P<day>\d+\.\d+)/(?P<starttime>\d+\.\d+)$',views.dijkstra2,name='djikstra-djikstra'),
         #user
         path(r'api/clientip',views.get_ip,name='get_ip'), 
         url(r'api/buspoints/(?P<lat>\d+\.\d+)/(?P<lon>\d+\.\d+)$',views.request_dublin_bus_points,name='points_requester'),
-url(r'api/stopfinder/(?P<lat>\d+\.\d+)/(?P<lon>\d+\.\d+)$',views.closest_stops,name='closest_stops'),     
+url(r'api/stopfinder/(?P<lat>\d+\.\d+)/(?P<lon>\d+\.\d+)$',views.closest_stops,name='closest_stops'),
+path(r'api/predictor/<int:day>/<slug:route>/<int:vnum>/<slug:stopA>/<slug:stopB>/<int:time>',views.single_predict,name='single-predict'),   
+url(r'api/get-user-profile', views.get_user_profile, name='user_profile'),
 ]     
 

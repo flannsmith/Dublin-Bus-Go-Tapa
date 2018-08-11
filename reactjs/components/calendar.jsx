@@ -5,9 +5,15 @@ import DateTime from 'react-datetime';
 
 export default class Calendar extends React.Component {
   render(){
+
+  var yesterday = DateTime.moment().subtract( 1, 'day' );
+  var valid = function( current ){
+    return current.isAfter( yesterday );
+  };
+
     return (
       <div>
-        <DateTime onChange={this.props.handleDate}/>
+        <DateTime isValidDate={ valid } placeholder="Date & Time" onChange={this.props.handleDate}/>
       </div>
         )
     }

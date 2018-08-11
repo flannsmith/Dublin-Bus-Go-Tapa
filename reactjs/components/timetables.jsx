@@ -1,5 +1,6 @@
 import Dropdown from 'react-dropdown';
 import React from "react";
+import TimetableAuto from "./timetablesAutocomplete.jsx";
 
 export default class Timetables extends React.Component {
  constructor(props) {
@@ -13,6 +14,7 @@ export default class Timetables extends React.Component {
     this.fillVariations = this.fillVariations.bind(this);
     this.fillStartStops = this.fillStartStops.bind(this);
     this.getTimetables = this.getTimetables.bind(this);    
+    this.changeCloseStops = this.changeCloseStops.bind(this);
 
     this.state = {
         //set state of componet here this is data you want you componet to hold
@@ -29,12 +31,20 @@ export default class Timetables extends React.Component {
         rawStartStops: null,
         selectedStartStop: null,
         startStopName: null,
-        timeTable: null
+        timeTable: null,
+        closeStops: null
     };
 }
 
+changeCloseStops(options){
+    console.log(options);
+    this.setState({
+      closeStops: options
+    });
+}
+
 componentDidMount() {
-    console.log("Fetching routes");
+/*    console.log("Fetching routes");
     let options = [];
     fetch('/api/routeselection/allroutes')
     .then((response) => response.json())
@@ -47,6 +57,23 @@ componentDidMount() {
         this.setState({
             allRoutes: options
          });
+    });
+*/
+    console.log("fetch stops")
+    let options = [];
+    let lat = this.props.currentLocationLat
+    let lng = this.props.currentLocationLon * -1
+    fetch('/api/stopfinder/'+lat+'/'+lng)
+    .then((response) => response.json())
+    .then((responseJson) => {
+       console.log(responseJson);
+       responseJson.stops.map((stop) => { 
+          let item = { value: stop.stop_id, label: stop.info.stop_name, className: 'list-group-item' };
+          options.push(item);
+        });
+       this.setState({
+          closeStops: options
+        });
     });
 
 }
@@ -65,8 +92,9 @@ fillVariations(option){
   fetch('/api/routeselection/routevariations/'+variation)
     .then((response) => response.json()) 
     .then((responseJson) => {
+          console.log(responseJson);
           let i = 0;
-          responseJson[variation].map((variation) => {
+          responseJson.data[variation].map((variation) => {
             console.log(variation);
             let item = { value: i, label: variation, className: 'list-group-item'};
             i++;
@@ -97,6 +125,7 @@ fillStartStops(option){
  fetch('/api/routeselection/routestops/'+route+'/'+stop)
     .then((response) => response.json())
     .then((responseJson) => {
+          console.log(responseJson);
           responseJson.map((variation) => {
             console.log(variation);
             let item = { value: variation.id, label: variation.name, className: 'list-group-item' };
@@ -126,24 +155,20 @@ getTimetables(option){
     fetch('/api/timetables/'+stopNumber)
     .then((response) => response.json())
     .then((responseJson) => {
-    //console.log(responseJson.stopNumber[0].arrive);
-    //console.log(responseJson["timetable"][0].arrive)
-    timetables="<h3>Timetable for stop " + stopNumber + "</h3>"
-    timetables+="<tb><thead><td>Arrival time</td><td>Route</td></thead><tr>"
-    responseJson["timetable"].map((stopTimetable)=>{
-    //console.log(stop_tt.arrive);
-    timetables+="<td>" + stopTimetable.arrive + "</td><td>" + stopTimetable.route + "</td></tr>"
-   });
-    timetables+="</tb>";
-
-    //let timetables = null; //change null to html data.
-    this.setState({
-     timeTable: timetables
-  });
- });
+    console.log(responseJson);
+    let timetables = [];
+    timetables.push(<thead><tr><th scope="col">Timetable for stop {stopNumber}</th></tr><tr><th scope="col">Arrives:</th><th scope="col">Route:</th></tr></thead>);
+    let rows = [];
+    responseJson.timetable.map((stopTimetable)=>{
+            rows.push(<tr><td>{stopTimetable.arrive}</td><td>{stopTimetable.route}</td></tr>)
+        });
+    timetables.push(<tbody>{rows}</tbody>);
+    console.log(timetables);
+    this.props.setTimeTables(timetables);
+   
+      }
+    );
 }
-
-
 
 render() { 
     //styles defined here
@@ -161,15 +186,10 @@ render() {
 	return (
        <div>
          <div className="form-group">
-             <Dropdown
-               className='quickTimesDropdown'
-               menuClassName='list-group makeScroll'
-               options={this.state.allRoutes}
-               onChange={this._onSelect1}
-               value={defaultOption}
-               placeholder={this.state.routePlace}
-             />
+             <h3>Find stops near:</h3>
+             <TimetableAuto isGoogleLoaded={this.props.isGoogleLoaded} changeCloseStops={this.changeCloseStops} />
          </div>
+        {/*
          <div className="form-group">
             <Dropdown
                    className='quickTimesDropdown'
@@ -180,18 +200,19 @@ render() {
                    placeholder={this.state.variationPlace}
             />
          </div>
+        */}
          <div className="form-group">
+                <h3>Stop Timetables:</h3>
                 <Dropdown
                    className='quickTimesDropdown'
                    menuClassName='list-group makeScroll'
-                   options={this.state.startStops}
+                   options={this.state.closeStops}
                    onChange={this._onSelect3}
                    value={defaultOption}
                    placeholder={this.state.stopPlace}
                 />
           </div>
-          {this.state.timeTable}
         </div>
-		)
+		);
 	}
 }
