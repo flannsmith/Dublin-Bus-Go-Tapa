@@ -74,7 +74,7 @@ export default class TimetableAuto extends React.Component {
    }
 
 if(this.state.mode){
-    console.log("RETURNING AUTOCOMPLETE 1");
+
     const searchOptions = {
        location: new google.maps.LatLng(53.350140, -6.266155),
        radius: 2000,

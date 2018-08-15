@@ -11,6 +11,15 @@ html {
     height: 100%;
 }
 
+#calender div:first-child {
+    height: 100px;
+}
+
+#calender .calenderDiv {
+    height: 200px;
+}
+
+
 #fixMap div {
     height: 100%
 }
@@ -58,4 +67,56 @@ html {
 
 .makeScroll {
     overflow: scroll;
+}
+
+.navHeader{
+    background-color: rgb(46,53,61);
+}
+
+.navBody{
+    background-color: rgb(24,28,32);
+}
+
+.navHeader:hover{
+    background-color: rgb(79,91,105);
+}
+
+.navBody:hover{
+    background-color: rgb(2,2,3);
+}
+
+/*.tableStyle table,  th {
+    border: 1px solid black;
+    align-content: left;
+    
+    
+}*/
+
+.tableStyle th tr{
+    border: 1px solid black;
+    /*align-content:center;
+    font:16px Arial, Helvetica, sans-serif;*/
+    line-height: 40px;
+    margin: 0 0 0 60px;
+    padding: 50px; 
+    font-family: fantasy;  
+    font-size:25px
+}
+
+.tableStyle tr:nth-child(odd) {
+    background-color: lightblue;
+}
+
+.tableStyle th {
+    background-color: white;
+    text-align: center;
+    padding: 10px;
+}
+.tableStyle td {
+    padding: 10px; 
+    /*padding-left: 250px;*/
+    text-align: center;
+    border: 1px solid black;
+    font-family: fantasy;
+    font-size: 25px;
 }

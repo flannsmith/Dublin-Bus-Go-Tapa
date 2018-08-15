@@ -1,4 +1,8 @@
 from django.test import TestCase
+from .models import Userlocation, Userpoints
+from django.urls import reverse
+from django.test import Client
+client=Client()
 
 # Create your tests here.
 '''
@@ -27,8 +31,12 @@ class testStops(TestCase):
     def test_all_stops(self):
         pass
 
-        
-        
+    #def test_weather(self):
+    #    self.assertIs(weather_record.temp,20.4)     
+    
+    def test_api_responses(self):
+        login_response = client.get(reverse('dublinBus:login')) 
+        self.assertIs(login_response.status_code,200)           
 
 if __name__ == '__main__':
     test = testStops()

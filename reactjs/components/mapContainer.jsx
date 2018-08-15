@@ -1,8 +1,5 @@
 import React, { Component } from "react";
 import { Map, InfoWindow, Marker, GoogleApiWrapper, Polyline } from "google-maps-react";
-//import {geolocated} from 'react-geolocated';
-import Button_Icon_BlueSky from "../../dublinBus/static/images/Button_Icon_BlueSky.svg";
-//import stops from './stops.js';
 import LocationSearchInput from "./LocationSearchInput.jsx";
 import Clock from "./clock.jsx";
 import ReactLoading from "react-loading";
@@ -68,6 +65,18 @@ export class MapContainer extends Component {
     //Function that runs when componet "mounts" or binds to the actual DOM.
     this.geocoder = new google.maps.Geocoder();
     this.props.setMapRef(this);
+    if('geolocation' in navigator){
+        // geolocation is supported
+        this.requestLocation();
+      }else{
+        // no geolocation
+        let msg = "Sorry, looks like your browser doesn't support geolocation";
+        console.log("Sorry, looks like your browser doesn't support geolocation");
+        this.setState({
+          searchName: msg, //sets message to this
+          alreadyRequestedlocation: true
+        })
+      }
   }
 
   toggleMap(){
@@ -152,7 +161,7 @@ export class MapContainer extends Component {
     this.setState({
           center : results, //chages center of map and center marker
           searchName : address, //chages search name <p> value
-          zoom: 16,
+          zoom: 13,
           destinationLat: lat,
           destinationLng: lng
         }
@@ -234,7 +243,7 @@ export class MapContainer extends Component {
     console.log(originName, startLat, startLng, destinationName, destLat, destLng, destLatLng);
     this.props.setStartEndMarker(originMarker, destinationMarker);
     this.setState({
-        zoom: 16, 
+        zoom: 13, 
         startLat: startLat,
         startLon: startLng,
         center : destLatLng, //chages center of map and center marker
@@ -338,8 +347,8 @@ routeFinder(address, fromLocation){
   fetch('/api/routefinder/'+originLat+'/'+originLng+'/'+destLat+'/'+destLng+'/'+dayOfWeek+'/'+timeInSeconds) //API call
     .then((response) => response.json())
     .then((responseJson) => {
-      console.log(responseJson); 
-
+      console.log("response json is here:", responseJson);
+     if(responseJson.data){
 /*  Below block of code now redudant as backend code provides walking and bus objects already broken up, left here as backup if new api fails.
 
       //In the below block of code we loop through all the data and store each bus route and walking route (which contain location objects) in its own array which in turn are all stored in the routeShape object. From this then we have a route shape object that has all the sub journeys of a route (arrays) as properties.
@@ -369,7 +378,6 @@ routeFinder(address, fromLocation){
         }
 */
         responseJson.data.map((stop) => { //Loops through the json marker data
-
         if ( stop.id == "end" || stop.id == "begin"){
           //do nothing already have stop and start markers
         } else {
@@ -387,44 +395,39 @@ routeFinder(address, fromLocation){
         }
       });
     
-     let directionsPolylines = []; 
+     let directionsPolylines = [];
      responseJson.shapes.bus.map((stop) => {
         directionsPolylines.push(
           <Polyline
           path={stop}
-          strokeColor="#ff0707"
+          strokeColor="#0000FF"
           strokeOpacity={0.8}
           strokeWeight={2}
           />
         );
      });
    
-     let lineSymbol = {
+     /*let lineSymbol = {
           path: 'M 0,-1 0,1',
           strokeOpacity: 1,
           scale: 4
-        }; 
-
+        };*/ 
      responseJson.shapes.walk.map((stop) => {
         directionsPolylines.push(
           <Polyline
           path={stop}
-          strokeColor="#0000FF"
-          strokeOpacity={0}
-          icon={{
-            icon: lineSymbol,
-            offset: '0',
-            repeat: '20px'
-          }}
-          strokeWeight={2}
+          strokeColor="#ff0707"
+          strokeOpacity={0.5}
+          strokeWeight={1.5}
           />
         );
      });
       
       console.log(stops);
-      console.log(stops[stops.length -1]);
+      console.log(responseJson.data);
       console.log(responseJson.data[responseJson.data.length -1]);
       let lastMarker = responseJson.data[responseJson.data.length -1];
+      console.log(lastMarker);
       let stopTime = new Date(lastMarker.time * 1000).toISOString().substr(11, 8);
       this.props.setTime(stopTime);
  
@@ -460,9 +463,14 @@ routeFinder(address, fromLocation){
       this.props.setDirectionMpolyline(stops, directionsPolylines);
       this.setState({
         // center: routeShape[0][0],
-        zoom: 17,
+        zoom: 13,
         searchName: address,
       });
+    }else{
+        this.props.toggleLoading();
+        alert("Sorry there are no scheduled buses for the chosen time. Please select a earlier date/time.");
+        console.log(responseJson.error-type);
+    }
     }).catch(function(error) {
       console.log(error);
   });
@@ -486,26 +494,24 @@ routeFinder(address, fromLocation){
       var geolng = pos.coords.longitude;
       var geolat = pos.coords.latitude;
       var newCenter = {lat: geolat, lng: geolng}
-      
-      if(!self.state.alreadyRequestedlocation){
-        self.setState({
-            timer: true,
-            center: newCenter 
-         });    
-      }
-
-     console.log("setting current location");      
 
       self.props.setCurrentLocation(geolat, geolng);      
 
       self.setState({
         // center: { ...self.state.center, lat: geolat, lon: geolng},
-        //center: newCenter,
         currentLocationLat: geolat,
         currentLocationLon: geolng,
-        alreadyRequestedlocation: true,
         zoom: 17,
-      });
+      }, () => { 
+           if(!self.state.alreadyRequestedlocation){
+            self.setState({
+            timer: true,
+            alreadyRequestedlocation: true,
+            center: newCenter
+        });
+       }
+    }
+);
 
       // let moveCenter = {currentLocationLat:this.state.currentLocationLat, currentLocationLon: this.state.currentLocationLon}
 
@@ -546,7 +552,7 @@ routeFinder(address, fromLocation){
 
       this.setState({
         center: routeShape[0],
-        zoom: 17,
+        zoom: 13,
         searchName: 'Start',
         polyline: busPolyline
       });
@@ -588,7 +594,8 @@ routeFinder(address, fromLocation){
       },
       directions: {
         display: this.props.route.showDirections ? 'block' : 'none', //checks weather directions for a route is needed.
-      //  position: 'absolute',
+        marginTop: '50px'
+        //  position: 'absolute',
         //backgroundColor: 'white',
        // height: '100%',
        // marginLeft: '85%',
@@ -609,7 +616,9 @@ routeFinder(address, fromLocation){
         textAlign: 'right',
         // Original blue: backgroundColor: 'rgb(3, 79, 152)',
         backgroundColor: 'rgb(255, 204, 1)',
-        height: '60px'
+        height: '60px',
+        boxShadow: '1px 1px 5px 1px #888888',
+        marginBottom: '8px'
       },
       buttonDiv: {
         marginBottom: '-37px',
@@ -649,10 +658,18 @@ routeFinder(address, fromLocation){
       },
       user: {
         display: this.props.route.displayUser ? 'block' : 'none',
+        marginTop : "3%",
+        marginLeft : "5%",
+        //table, td, th{
+         //   border: 1px,
+       // }
     },
       table: {
         marginTop: '50px'
-      }
+      },
+      eta: {
+        border: '0px'
+    }
     }
 
     let mapContainer_class = this.props.display ? "mapContainerOpen" : "mapContainerClosed";
@@ -679,7 +696,7 @@ routeFinder(address, fromLocation){
       this.props.isGoogleLoaded(true);
     }
 
-    if (!this.state.alreadyRequestedlocation){
+   /* if (!this.state.alreadyRequestedlocation){
       //if the browser has not already requested the location do this.
       if('geolocation' in navigator){
         // geolocation is supported
@@ -692,7 +709,7 @@ routeFinder(address, fromLocation){
           alreadyRequestedlocation: true
         })
       }
-    }
+    }*/
 
     //  **CHANGE THIS** - Need to optimise, do this in different file before import, uneeded computation here.
     // let allStops = [];
@@ -767,14 +784,14 @@ routeFinder(address, fromLocation){
          </div>
 
          <div style={styles.directions}>
-            <li className="list-group-item">
+            <li className="list-group-item" style={styles.eta}>
             <p className="lead">ETA:</p>
             <p className="lead">{this.props.route.eta}</p>
            </li>
             {this.props.route.userDirections}
           </div>
           
-            <div style={styles.user}>
+            <div className="tableStyle" style={styles.user}>
                 {this.props.route.userDetails}
             </div>
 

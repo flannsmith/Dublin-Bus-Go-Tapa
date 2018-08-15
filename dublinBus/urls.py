@@ -23,6 +23,7 @@ urlpatterns = [
         path(r'api/routeselection/routestops/<slug:route>/<int:variation>',views.get_stops_in_route,name='get-route-stops'),
         path(r'api/routeselection/route_shape/<slug:route>/<int:variation>/<int:stopA>/<int:stopB>',views.get_route_shape,name='get-route-stops'),
         path(r'api/routeselection/routes_from_stop/<slug:stop>',views.routes_serving_stop,name='routes-serving-stop'),
+        path(r'api/routeselection/route_shapes_for_stop/<slug:stop>',views.get_routes_serving_stop,name='routes serve stop'),
         #misc
         path(r'api/dummy/<int:day>/<int:week>',views.dummy,name='dummy'),
         path(r'api/get-route-all-variation/<slug:routename>',views.get_route,name='getroute'),

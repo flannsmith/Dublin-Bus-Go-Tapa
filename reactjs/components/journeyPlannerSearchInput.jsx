@@ -25,6 +25,7 @@ export default class JourneySearchInput extends React.Component {
     geocodeByAddress(address)
       .then(results => getLatLng(results[0]))
       .then(latLng => {
+            this.setState({ address });
             console.log('Success', latLng);
             console.log(this.props.journeyPlannerFormStart);
             console.log(this.props.journeyPlannerFormEnd);
@@ -37,7 +38,8 @@ export default class JourneySearchInput extends React.Component {
   componentWillReceiveProps(nextProps) {
      // You don't have to do this check first, but it can help prevent an unneeded render
      if (nextProps.isGoogleLoaded !== this.state.isGoogleLoaded) {
-        this.setState({ 
+       console.log("setting state too much");
+       this.setState({ 
         mode: nextProps.isGoogleLoaded,
         isGoogleLoaded: true
         });
@@ -68,7 +70,6 @@ export default class JourneySearchInput extends React.Component {
     }
  
 if(this.state.mode){
-    console.log("RETURNING AUTOCOMPLETE");
     const searchOptions = {
        location: new google.maps.LatLng(53.350140, -6.266155),
        radius: 2000,

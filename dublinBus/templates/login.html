@@ -1,5 +1,5 @@
 {% extends "base.html" %} 
-{% load static %} 
+{% load static %}
 {% block main %}
 
 <div id="login-form-body">
@@ -7,7 +7,7 @@
         <form class="loginform" action="{% url 'dublinBus:login' %}" method="POST">
             {% csrf_token %}
             <!--{{ form }}-->
-            <img class="mb-4 center-block" src="./static/images/GoTapaLogo.png" alt="" width="300" height="120">
+            <img class="mb-4 center-block" src="./static/images/GoTapaLogo.png" alt="" width="200" height="120">
             <!--  <h1 class="h3 mb-3 font-weight-normal text-center">Sign in</h1> -->
             {% for field in form %}
             <div class="input-group">
@@ -15,20 +15,32 @@
                     type="{{ field.html_name }}" /> {{ field.errors }}
             </div>
             {% endfor %}
-    
+
         <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+        
+        
+            
+            <div>
+              <p>  {{ invalid }} </p>
+            </div>
+           
+        
         <p class="mt-5 mb-3 text-muted text-center">&copy; 2018</p>
         </form>
-        
+        {% if invalid %}
+        <div>
+        <p> Invalid</p>
+        </div>
+        {% endif %}
         <form class="signupform" action="{% url 'dublinBus:signup' %}" method="POST">
             {% csrf_token %}
-        
+
         <div id="signup-btn">
             <button id="btn-signup" type="submit">Sign up</button>
             </form>
         </div>
     </div>
 </div>
-                                
-                                
+
+
 {% endblock %}

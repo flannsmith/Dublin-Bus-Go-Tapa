@@ -25,7 +25,7 @@ SECRET_KEY = '%q3=y0-0-2&$-ltci9o1q)8ze2r0i1n&_^h)p$y9jy@=a&5@#q'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['csi420-01-vm8.ucd.ie', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['csi420-01-vm8.ucd.ie', '127.0.0.1', 'localhost', 'testserver']
 
 
 # Application definition

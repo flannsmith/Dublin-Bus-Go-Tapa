@@ -3,6 +3,8 @@ import React from "react"
 import Nav from "../components/nav"
 import MapContainer from "../components/mapContainer"
 import Form from "../components/form"
+import { Redirect } from 'react-router-dom'
+
 
 export default class Main extends React.Component {
   constructor(props) {
@@ -33,7 +35,12 @@ export default class Main extends React.Component {
    this.getUserDetails = this.getUserDetails.bind(this);
    this.setCurrentLocation = this.setCurrentLocation.bind(this);
    this.toggleUser = this.toggleUser.bind(this);
+   this.toggleQuickTimes = this.toggleQuickTimes.bind(this);
+   this.toggleTimetables = this.toggleTimetables.bind(this);
+   this.toggleLoading = this.toggleLoading.bind(this);
+   this.setMapTimetable = this.setMapTimetable.bind(this);
 
+//   this.logoutUser = this.logoutUser.bind(this);
     //set the state of this componet dictionary of data we want to store
    this.state = {
      formDisplay: true,
@@ -73,8 +80,18 @@ export default class Main extends React.Component {
      currentLocationLat: 53.3082648, //users current latitude, defaults to UCD
      currentLocationLon: -6.22363949999999,  //users current longitude, defaults to UCD
      userDetails: null,
-     displayUser: false
+     displayUser: false,
+     quickTimes: false,
+     favourites: false,
+     timetables: false
    };
+    
+ }
+
+ toggleLoading(){
+    this.setState({
+        loading: false
+    });
  }
 
  setMapRef(value){
@@ -89,6 +106,15 @@ export default class Main extends React.Component {
     });
  }
 
+setMapTimetable(startM, endM, directionM, polyline){
+this.setState({
+        startMarker: startM,
+        endMarker: endM,
+        directionMarkers: directionM,
+        polyline: polyline
+    });
+}
+
  setQuickTimes(startM, endM, directionM, polyline, center){
     console.log("CHECK IF EXECUTING");
     this.setState({
@@ -97,7 +123,6 @@ export default class Main extends React.Component {
         directionMarkers: directionM,
         polyline: polyline,
         center: center,
-        sidebarOpen: false
     });
  }
  
@@ -114,7 +139,8 @@ export default class Main extends React.Component {
         displayTimetables: true,
         showDirections: false,
         mapToggleDisabeled: false,
-        displayUser: false
+        displayUser: false,
+        sidebarOpen: false
     });
  }
 
@@ -152,10 +178,30 @@ export default class Main extends React.Component {
 
  toggleJourneyPlanner(){
     this.setState({
-        journeyPlanner: !this.state.journeyPlanner
+        journeyPlanner: !this.state.journeyPlanner,
+        quickTimes: false,
+        favourites: false,
+        timetables: false,
     });
  }
 
+ toggleQuickTimes(){
+    this.setState({
+        quickTimes: !this.state.quickTimes,
+        favourites: false,
+        timetables: false,
+        journeyPlanner: false
+    });
+}
+
+toggleTimetables(){ 
+    this.setState({ 
+        timetables: !this.state.timetables,
+        quickTimes: false,
+        favourites: false,
+        journeyPlanner: false
+    });
+}
 
  showDirections(directions){
    this.setState({
@@ -245,6 +291,7 @@ getUserDetails(){
     //let username = '';
     let points = 0;
     let userProfile=[];
+    let leaderBoardDetails = [];
     fetch('/api/get-user-profile',{method: "GET", credentials: 'same-origin'})
     .then((response) => response.json())
     .then((responseJson) =>{
@@ -252,11 +299,15 @@ getUserDetails(){
     let username = responseJson.username;
     console.log(username)
     points = responseJson.points;
-    userProfile.push(<div><h2>Username: {username}</h2><h3>Co2 Reduction Points: {points}</h3><h2>Leaderboard</h2>);
+    leaderBoardDetails.push(<thead><tr><th scope="col">Username</th><th scope="col">Points</th></tr></thead>)
+    let allLboardpoints = [];
     responseJson.leaderboard.map((lboardpoints)=>{
-    userProfile.push(<tr><td>{lboardpoints.use}r</td><td>{lboardpoints.points}</td></tr>)
+    
+    allLboardpoints.push(<tr><td>{lboardpoints.user}</td><td>{lboardpoints.points}</td></tr>)
      });
-    userProfile.push(</div>);
+    leaderBoardDetails.push(<tbody>{allLboardpoints}</tbody>);
+    userProfile.push(<div><h2>Username: {username}</h2><h3>Co2 Reduction Points: {points}</h3><h2>Leaderboard</h2><table className='tableStyle'>{leaderBoardDetails}</table></div>);
+    //userProfile.push(</div>);
     
     
     this.setState({
@@ -265,10 +316,18 @@ getUserDetails(){
         showDirections: false,
         displayTimetables: false,
         mapToggleDisabeled: false,
+        sidebarOpen: false,
         displayUser: true
      });
    });
  }
+
+ //logoutUser(){
+  //  console.log("in logout user")
+   // this.preventDefault();
+   // fetch('/logout',{method: "GET", credentials: 'same-origin'})
+   // return <Redirect to='/' />
+ // }
 
  //After drawing a route, changes the state back to false. This function is passed to the MapContainer componet which will draw the route. ie. <MapContainer reset={this.resetDraw} />
  resetDraw(event) {
@@ -290,15 +349,17 @@ getUserDetails(){
  }
 
   render() {
+
+    
     //checks weather the sidebar is open or not in the state of this component and passes the variables as componets to the Nav and Mapcontainer to use in their CSS properties.
     let isSidebarOpen = this.state.sidebarOpen ? true : false;
     let isMapContainerWide = this.state.sidebarOpen ? true : false;
     //let isJourneyPlannerOpen = this.state.formDisplay ? false : true;
     return (
       <div id="mainContent" className="fullHeight">
-        <Nav currentLocationLat={this.state.currentLocationLat} currentLocationLon={this.state.currentLocationLon}  userProfile={this.getUserDetails} secondLocationOpen={this.state.secondLocationOpen} calenderOpen={this.state.calenderOpen} submitOpen={this.state.submitOpen}  onClick={this.toggleNavBar} setTimeTables={this.setTimeTables} mapRef={this.state.mapRef} setQuickTimes={this.setQuickTimes} journeyPlanner={this.state.journeyPlanner} toggleJourneyPlanner={this.toggleJourneyPlanner} isGoogleLoaded={this.state.isGoogleLoaded} showMarkers={this.showMarkers} handleDate={this.handleDate} time={this.state.eta} display={isSidebarOpen} submit={this.handleSubmit} input={this.handleInputChange} loading={this.state.loading} journeyPlannerFormStart={this.journeyPlannerFormStart} journeyPlannerFormEnd={this.journeyPlannerFormEnd} showDirections={this.state.showDirections} userDirections={this.state.userDirections} submit_fav={this.handleSubmitFav}/>
+        <Nav setMapTimetable={this.setMapTimetable} toggleQuickTimes={this.toggleQuickTimes} toggleTimetables={this.toggleTimetables} currentLocationLat={this.state.currentLocationLat} currentLocationLon={this.state.currentLocationLon}  userProfile={this.getUserDetails} secondLocationOpen={this.state.secondLocationOpen} calenderOpen={this.state.calenderOpen} submitOpen={this.state.submitOpen}  onClick={this.toggleNavBar} setTimeTables={this.setTimeTables} mapRef={this.state.mapRef} setQuickTimes={this.setQuickTimes} quickTimes={this.state.quickTimes} timetables={this.state.timetables}  journeyPlanner={this.state.journeyPlanner} toggleJourneyPlanner={this.toggleJourneyPlanner} isGoogleLoaded={this.state.isGoogleLoaded} showMarkers={this.showMarkers} handleDate={this.handleDate} time={this.state.eta} display={isSidebarOpen} submit={this.handleSubmit} input={this.handleInputChange} loading={this.state.loading} journeyPlannerFormStart={this.journeyPlannerFormStart} journeyPlannerFormEnd={this.journeyPlannerFormEnd} showDirections={this.state.showDirections} userDirections={this.state.userDirections} submit_fav={this.handleSubmitFav}/>
         <div className="fullHeight">
-           <MapContainer toggleDirections={this.toggleDirections} toggleUser={this.toggleUser} setCurrentLocation={this.setCurrentLocation} toggleTimetable={this.toggleTimetable} setMapRef={this.setMapRef} resetCenter={this.resetCenter} setDirectionMpolyline={this.setDirectionMpolyline} setStartEndMarker={this.setStartEndMarker} isGoogleLoaded={this.isGoogleLoaded} display={isMapContainerWide} setTime={this.setTime} onClick={this.toggleNavBar} route={this.state} reset={this.resetDraw} showDirections={this.showDirections} showDirectionFromLocation={this.showDirectionFromLocation}/>
+           <MapContainer toggleDirections={this.toggleDirections} toggleLoading={this.toggleLoading} toggleUser={this.toggleUser} setCurrentLocation={this.setCurrentLocation} toggleTimetable={this.toggleTimetable} setMapRef={this.setMapRef} resetCenter={this.resetCenter} setDirectionMpolyline={this.setDirectionMpolyline} setStartEndMarker={this.setStartEndMarker} isGoogleLoaded={this.isGoogleLoaded} display={isMapContainerWide} setTime={this.setTime} onClick={this.toggleNavBar} route={this.state} reset={this.resetDraw} showDirections={this.showDirections} showDirectionFromLocation={this.showDirectionFromLocation}/>
         </div>  
     </div>
     )

@@ -27,7 +27,7 @@ export default class QuickTimes extends React.Component {
      endStops: null,
      variation: null,
      rawStartStops: null,
-     selected: "Select an option",
+     selected: "Select a route",
      selectedVariation: "Pick a direction:",
      selectedStartStop: "Start stop:",
      selectedDestiantion: "Destination stop:",
@@ -41,7 +41,8 @@ export default class QuickTimes extends React.Component {
      startStopOpen: false,
      destinationStopOpen: false,
      calenderOpen: false,
-     submitOpen: false
+     submitOpen: false,
+     departureTime: null
    }
 }
 
@@ -63,21 +64,35 @@ submit(event){
     let timeInSeconds = timeInMilliseconds / 1000;
     console.log(timeInSeconds);
     
-    let route = String(this.state.selected.value);
+    let route = String(this.state.selected);
+    console.log(this.state.selected);
     let variation = this.state.variation.value;
     let start = this.state.selectedStartStop;
     let end = this.state.selectedDestiantion;   
-
+    console.log("fetch('/api/predictor/'"+now.getDay()+"'/'"+route+"'/'"+variation+"'/'"+start+"'/'"+end+"'/'"+timeInSeconds+")");
     fetch('/api/predictor/'+now.getDay()+'/'+route+'/'+variation+'/'+start+'/'+end+'/'+timeInSeconds) //API call
     .then((response) => response.json())
     .then((responseJson) => {
-        let arrivalTime = responseJson["arrival time"];
-        console.log(arrivalTime);
-        this.setState({
-            loading: false,
-            eta: arrivalTime,
-            showDirections: true 
-         });
+        console.log(responseJson);
+        if(responseJson["arrival time"]){
+            let departureTime = responseJson["departure time"];
+            let arrivalTime = responseJson["arrival time"];
+            departureTime = departureTime.slice(0, 4);
+            arrivalTime = arrivalTime.slice(0, 4);
+            console.log(arrivalTime);
+            this.setState({
+                loading: false,
+                eta: arrivalTime,
+                showDirections: true,
+                departureTime: departureTime,
+             });
+        }else{
+            this.setState({
+                loading: false,
+             });
+            alert("Sorry there are no scheduled buses for the chosen time. Please select a different date/time.");
+            console.log(responseJson.error-type);
+        }
     });
 }
 
@@ -90,8 +105,10 @@ handleDate(date){
 };
 
 _onSelect1(option) {
+    console.log("in onselect1")
+    console.log(option)
   this.setState({
-    selected: option, 
+    selected: option.value, 
     variationOpen: true, 
     startStopOpen: false, 
     destinationStopOpen: false,
@@ -136,12 +153,13 @@ _onSelect2(option) {
 }
 
 fillStartStops(option){
-  let route = String(this.state.selected.value);
+  let route = String(this.state.selected);
   console.log("Entered startStops");
   console.log(option);
   let stop = option.value;
   let options = [];
-
+  console.log(route);
+console.log(stop);
  fetch('/api/routeselection/routestops/'+route+'/'+stop)
     .then((response) => response.json())
     .then((responseJson) => {
@@ -161,7 +179,7 @@ fillStartStops(option){
 _onSelect3(option) {
   this.setState({
     selectedStartStop: option.value,
-    startStopName: option.labe,
+    startStopName: option.label,
     destinationStopOpen: true,
     calenderOpen: false,
     submitOpen: false
@@ -170,6 +188,7 @@ _onSelect3(option) {
 }
 
 fillEndStops(option){
+  
   console.log(this.state.rawStartStops);
   console.log(option.value);
   let stopNumber = String(option.value);
@@ -199,7 +218,7 @@ _onSelect4(option) {
 }
 
 getShapes(option){
-  let route = String(this.state.selected.value);
+  let route = String(this.state.selected);
   let variation = this.state.variation.value;
   let start = this.state.selectedStartStop;
   let end = option.value;
@@ -207,7 +226,7 @@ getShapes(option){
   let polyline = [];
   let startM = null;
   let endM = null;
-
+  
  fetch('/api/routeselection/route_shape/'+route+'/'+variation+'/'+start+'/'+end)
     .then((response) => response.json())
     .then((responseJson) => {
@@ -284,7 +303,8 @@ componentDidMount() {
         fontSize: '15px'
       },
       directions: {
-        display: this.state.showDirections ? 'block' : 'none'
+        display: this.state.showDirections ? 'block' : 'none',
+        textAlign: 'left'
       },
       loading: {
         display: this.state.loading ? 'block' : 'none'
@@ -303,6 +323,23 @@ componentDidMount() {
     },
     submitOpen: {
         display: this.state.submitOpen ? 'block' : 'none'
+    },
+    eta: {
+        color: 'green',
+        display: 'inline-block',
+        marginBottom: '5px'    
+    },
+    busArrival: {
+        display: 'inline-block',
+        marginBottom: '5px'
+    },
+    icons: {
+        fontSize: '24px',
+        paddingRight: '10px',
+        display: 'inline-block'
+    },
+    details: {
+        marginLeft: '20px'
     }
     }
 
@@ -320,7 +357,7 @@ componentDidMount() {
                    options={this.state.routes} 
                    onChange={this._onSelect1} 
                    value={defaultOption} 
-                   placeholder={this.state.selected.value} 
+                   placeholder={this.state.selected} 
                 />
             </div>
             <div className="form-group" style={styles.variation}>
@@ -364,8 +401,10 @@ componentDidMount() {
             </div>
             <div style={styles.directions}>
                 <li className="list-group-item">
-                    <p className="lead">ETA:</p>
-                    <p className="lead">{this.state.eta}</p>
+                    <i className="fa fa-map-marker" style={styles.icons}></i><p className="lead" style={styles.busArrival}>Next bus Arivving at:</p>
+                    <p className="lead" style={styles.details}>{this.state.departureTime}</p>
+                    <i className="fa fa-hourglass-2" style={styles.icons}></i><p className="lead" style={styles.eta}>ETA:</p>
+                    <p className="lead" style={styles.details}>{this.state.eta}</p>
                 </li>
             </div>
         </form>
