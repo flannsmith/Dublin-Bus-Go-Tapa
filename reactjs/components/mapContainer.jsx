@@ -161,7 +161,7 @@ export class MapContainer extends Component {
     this.setState({
           center : results, //chages center of map and center marker
           searchName : address, //chages search name <p> value
-          zoom: 13,
+          zoom: 12,
           destinationLat: lat,
           destinationLng: lng
         }
@@ -243,7 +243,7 @@ export class MapContainer extends Component {
     console.log(originName, startLat, startLng, destinationName, destLat, destLng, destLatLng);
     this.props.setStartEndMarker(originMarker, destinationMarker);
     this.setState({
-        zoom: 13, 
+        zoom: 12, 
         startLat: startLat,
         startLon: startLng,
         center : destLatLng, //chages center of map and center marker
@@ -296,11 +296,6 @@ routeFinder(address, fromLocation){
       originLng = originLng * -1;
     }
   } else {
-    console.log("Setting seact origins");
-    console.log(this.state.startLat);
-    console.log(this.state.startLon);
-    console.log(this.state.destinationLat);
-    console.log(this.state.destinationLng);
     originLat = this.state.startLat;
     originLng = this.state.startLon;
     if ( originLng < 0 ){
@@ -423,12 +418,9 @@ routeFinder(address, fromLocation){
         );
      });
       
-      console.log(stops);
-      console.log(responseJson.data);
-      console.log(responseJson.data[responseJson.data.length -1]);
-      let lastMarker = responseJson.data[responseJson.data.length -1];
-      console.log(lastMarker);
+      let lastMarker = responseJson.data[0];
       let stopTime = new Date(lastMarker.time * 1000).toISOString().substr(11, 8);
+      stopTime = stopTime.slice(0, 5);
       this.props.setTime(stopTime);
  
   /*    for (var index in routeShape){
@@ -463,7 +455,7 @@ routeFinder(address, fromLocation){
       this.props.setDirectionMpolyline(stops, directionsPolylines);
       this.setState({
         // center: routeShape[0][0],
-        zoom: 13,
+        zoom: 12,
         searchName: address,
       });
     }else{
@@ -501,7 +493,7 @@ routeFinder(address, fromLocation){
         // center: { ...self.state.center, lat: geolat, lon: geolng},
         currentLocationLat: geolat,
         currentLocationLon: geolng,
-        zoom: 17,
+        zoom: 16,
       }, () => { 
            if(!self.state.alreadyRequestedlocation){
             self.setState({
@@ -594,7 +586,8 @@ routeFinder(address, fromLocation){
       },
       directions: {
         display: this.props.route.showDirections ? 'block' : 'none', //checks weather directions for a route is needed.
-        marginTop: '50px'
+        marginTop: '50px',
+        marginBottom: '50px'
         //  position: 'absolute',
         //backgroundColor: 'white',
        // height: '100%',
@@ -658,17 +651,23 @@ routeFinder(address, fromLocation){
       },
       user: {
         display: this.props.route.displayUser ? 'block' : 'none',
-        marginTop : "3%",
+        marginTop : "50px",
         marginLeft : "5%",
-        //table, td, th{
-         //   border: 1px,
-       // }
     },
       table: {
         marginTop: '50px'
       },
       eta: {
         border: '0px'
+    },
+    busArrival: {
+        display: 'inline-block',
+        marginBottom: '5px'
+    },
+    icons: {
+        fontSize: '24px',
+        paddingRight: '10px',
+        display: 'inline-block'
     }
     }
 
@@ -767,8 +766,8 @@ routeFinder(address, fromLocation){
         <div style={styles.buttonDiv}>
             <Toggle
                 onClick={this.toggleMap}
-                on={<h2>Map</h2>}
-                off={<h2>Details</h2>}
+                on={<h2></h2>}
+                off={<h2></h2>}
                 height="30px"
                 width="55px"
                 size="xs"
@@ -785,7 +784,7 @@ routeFinder(address, fromLocation){
 
          <div style={styles.directions}>
             <li className="list-group-item" style={styles.eta}>
-            <p className="lead">ETA:</p>
+            <i className="fa fa-hourglass-2" style={styles.icons}></i><p className="lead" style={styles.busArrival}>ETA:</p>
             <p className="lead">{this.props.route.eta}</p>
            </li>
             {this.props.route.userDirections}
@@ -827,8 +826,8 @@ routeFinder(address, fromLocation){
                 marker={this.state.activeMarker}
                 visible={this.state.showingInfoWindow}>
                 <div>
-                  <h3>{this.state.selectedPlace.name}</h3>
-                  <h4>{this.state.selectedPlace.time}</h4>
+                  <p>{this.state.selectedPlace.name}</p>
+                  <p>{this.state.selectedPlace.time}</p>
                 </div>
               </InfoWindow>
               {this.props.route.polyline}
@@ -839,7 +838,7 @@ routeFinder(address, fromLocation){
         }
       }
       export default GoogleApiWrapper({
-        apiKey: "AIzaSyC36Mq4sQqGL0ePgZRKN_FqCeY1olujJFM",
+        apiKey: "AIzaSyDjRsP2Z4JM86ag3hkbRMmfS1a72YBlD8w",
         v: "3.30"
       })(MapContainer);
 

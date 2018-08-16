@@ -49,8 +49,11 @@ login-form-body{
     margin: auto;
     background-color: lightblue;
 } */
-
-
+.navbar{
+  background-image: none !important;
+  background-color: rgb(255, 204, 1) !important;
+  border-bottom: none !important;
+}
 form.loginform{
     width: 100%;
     max-width: 50%;
@@ -133,4 +136,9 @@ button.btn.btn-lg.btn-primary.btn-block {
 
 button.btn.btn-lg.btn-primary.btn-block{
     color: 'green';
-} */
+} 
+
+.error-message{
+    margin-left: 30%;
+    font: 30px;
+}

@@ -73,11 +73,23 @@
 .phead{
     padding: 5%;
     text-align: left;
+    border-bottom: 1px solid #c7c7c7;
+}
+
+.pbody{
+    background-color: rgb(67, 67, 67);
+    padding: 5%;
 }
 
 #logout{
     padding: 5%;
     text-align: left;
+}
+
+.userIcon{
+    font-size: 68px;
+    padding-bottom: 10px;
+
 }
 
 @media only screen and (max-width: 768px) {

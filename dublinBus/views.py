@@ -18,6 +18,7 @@ import os
 import time
 import datetime
 from django.db.models.aggregates import Max
+from django.contrib import messages
 CREATE_NETWORK = False
 LOAD_NETWORK = True
 def network_updater():
@@ -25,10 +26,10 @@ def network_updater():
     Function for loading updated network timetables. Run as thread.
     """
     global network
-    with open('dublinBus/static/neuraltimetabledump.bin','rb') as handle:
+    with open('dublinBus/static/timetabledump.bin','rb') as handle:
         network.nodes = pickle.load(handle)
-        network.properly_add_foot_links()
         network.prepare_dijkstra()
+        network.properly_add_foot_links()
     handle.close()
     while True:
         now = datetime.datetime.now()
@@ -53,6 +54,7 @@ def network_updater():
 
 #Either create the network object from scratche
 if CREATE_NETWORK:
+    
     network = simple_network2.simple_network()
     network.generate_time_tables()
     for node in network.nodes:
@@ -65,8 +67,8 @@ if CREATE_NETWORK:
         pickle.dump(network,handle,protocol=pickle.HIGHEST_PROTOCOL)
 #Or load it from disk
 elif LOAD_NETWORK:
-    from dbanalysis.network import simple_network3
-    network = simple_network3.simple_network(build=False)
+    from dbanalysis.network import simple_network4
+    network = simple_network4.simple_network(build=False)
     updater = Thread(target = network_updater)
     updater.start()
     #with open('simple_network_concated','rb') as handle:
@@ -154,7 +156,7 @@ def get_timetable(request,stop):
     #get the date time at midnight
     dt = datetime.datetime.now()
     d = network.get_stop_time_table(str(stop),dt)
-    if d is None:
+    if d is None or len(d) == 0:
         return JsonResponse({'timetable':d,'error':True},safe=False)
     else:
         return JsonResponse({'timetable':d,'error':False},safe=False)
@@ -260,12 +262,14 @@ def login_view(request):
            
            return redirect('dublinBus:home_page')
        else:
-            form=AuthenticationForm()
-            print("invalid request")
-            return render(request, 'login.html', {'form': form}, {'invalid': "Incorrect"})
+            #form=AuthenticationForm()
+            
+            messages.error(request,'Invalid username or password. Please try again')
+            return redirect('dublinBus:login')
+           # return render(request, 'login.html', {'form': form}, {'invalid': 'invalid'})
     else:
         form=AuthenticationForm()
-    return render(request, 'login.html',{'form': form})
+    return render(request, 'login.html',{'form': form}, {'invalid': 'invalid'})
 
 #This view is to sign-up users 
 def signup_view(request):
@@ -276,7 +280,7 @@ def signup_view(request):
         if form.is_valid():
             user=form.save()
             login(request,user)
-            newUser=Userpoints(user_id=request.user, dublin_bus_points=0)
+            newUser=Userpoints(user_id=request.user, dublin_bus_points=0, distance_travelled_on_DublinBus=0)
             newUser.save()
             return redirect('dublinBus:home_page')
     else:
@@ -317,7 +321,7 @@ def user_favourites(request, loc_address, loc_name):
 
 def user_location(request, origin_Lat, origin_Lon):
     """
-    Method for receiving user's location, validating that she is using dublin bus wifi, and saving the location to award future points.
+    Method for receiving user's location, validating that they are using dublin bus wifi, and saving the location to award future points.
     """
     #if request.user.is_authenticated:
     import time
@@ -429,10 +433,12 @@ def get_routes_serving_stop(request,stop):
     try:
         routes_serving = network.stop_getter.get_stop_info(str(stop))['serves']
         response = []
-
+        color_count = 0
+        colors = ['blue','red','yellow','green','purple','pink','orange','indigo','cyan']
         for route in routes_serving:
             for variation in routes_serving[route]:
                 try:
+                    
                     array = network.selector.routes[route][variation][1:]
                     stopB = str(array[-1])
                     resp1 = resp1 = network.stop_getter.get_shape_route(stop,stopB,array)
@@ -440,10 +446,14 @@ def get_routes_serving_stop(request,stop):
                     stopB = network.stop_getter.get_stop_coords(str(stopB))
                     shape = [{'lat':i['lat'],'lng':i['lon']} for i in resp1['shape']]
                     if len(resp1['shape']) > 0:
-                        response.append({'stops':[stopA,stopB],'distance':resp1['distance'],'shape':shape})
+                        response.append({'stops':[stopB],'distance':resp1['distance'],\
+                                        'colors':colors[color_count],'shape':shape})
+                    color_count += 1
+                    if color_count == len(colors):
+                        color_count = 0
                 except:
                     pass
-        return JsonResponse({'data':response,'error':False},safe=False)
+        return JsonResponse({'data':response,'begin_stop':stopA,'error':False,},safe=False)
     except Exception as e:
         return JsonResponse({'error':True,'error_type':str(e)},safe=False)
 
@@ -486,6 +496,7 @@ def single_predict(request,day,route,vnum,stopA,stopB,time):
     
    
     except Exception as e:
+        print(e)
         return JsonResponse({'travel time':None,'arrival time':None,'error':True,'error-type':str(e)},safe=False)
 def closest_stops(request,lat,lon):
     """
@@ -513,7 +524,7 @@ def closest_stops(request,lat,lon):
     return JsonResponse(resp,safe=False)
 
 #get user details
-def get_user_profile(request):
+def get_user_profile1(request):
     username=request.user.username
     user_id=request.user.id
     user_points=Userpoints.objects.filter(user_id=user_id)
@@ -522,13 +533,29 @@ def get_user_profile(request):
     users_max_points=Userpoints.objects.order_by('-dublin_bus_points')[:5]
     leaderboard=[]
     for user in users_max_points:
-        username_queryset=User.objects.filter(id=user.id)
+        username_queryset=User.objects.filter(id=user.user_id_id)
+        
         for user_in_queryset in username_queryset:
             username_leaderboard=user_in_queryset.username 
-        leaderboard.append({'user': username_leaderboard, 'points':user.dublin_bus_points})
+        leaderboard.append({'user': username_leaderboard, 'points':user.dublin_bus_points,'distance_travelled':user.distance_travelled_on_DublinBus})
         
     return JsonResponse({'username':username, 'points':u_points, 'leaderboard':leaderboard}, safe=False)
-        
+
+
+def get_user_profile(request):
+    username=request.user.username
+    user_id=request.user.id
+    u_points=Userpoints.objects.get(user_id_id=user_id).dublin_bus_points
+    users_max_points=Userpoints.objects.order_by('-dublin_bus_points')[:5]
+    print(users_max_points)
+    leaderboard=[]
+    for userid in users_max_points:
+        username_leaderboard=User.objects.get(id=userid.user_id_id)
+        print("user", userid.id)
+        print(username_leaderboard)
+        leaderboard.append({'user': username_leaderboard.username, 'points':userid.dublin_bus_points,'distance_travelled':userid.distance_travelled_on_DublinBus})
+
+    return JsonResponse({'username':username, 'points':u_points, 'leaderboard':leaderboard}, safe=False)        
 #@authentication_classes((SessionAuthentication, BasicAuthentication))
 #@permission_classes((IsAuthenticated,))
 #def example_view(request, format=None):

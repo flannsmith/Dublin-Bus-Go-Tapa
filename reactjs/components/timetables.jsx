@@ -135,6 +135,8 @@ getTimetables(option){
   let stopNumber = String(option.value);
   let markers = [];
   let polylines = [];
+  let stopLat = null;
+  let stopLng = null;
   fetch('/api/routeselection/route_shapes_for_stop/'+stopNumber)
     .then((response) => response.json())
     .then((responseJson) => {
@@ -142,9 +144,19 @@ getTimetables(option){
             console.log("Error in route_shapes_for_stop api");
         }else{
         console.log(responseJson);
+        stopLat = responseJson.begin_stop.lat;
+        stopLng = responseJson.begin_stop.lon;
+        let originMarker = <Marker
+                position={{lat: stopLat, lng: stopLng}}
+                title="Stop"
+                name="Stop"
+                onClick={this.props.mapRef.onMarkerClick}
+              />;        
+        markers.push(originMarker);
+
         responseJson.data.map((route) => {
 
-        let startLat = route.stops[0].lat;
+        /*let startLat = route.stops[0].lat;
         let startLng = route.stops[0].lon;
         let destLat = route.stops[1].lat;
         let destLng = route.stops[1].lon;
@@ -165,24 +177,31 @@ getTimetables(option){
         
         markers.push(originMarker);
         markers.push(endMarker);
+        */
 
-        let busPolyline = <Polyline
+        let busPolyline = 
+                <Polyline
                 path={route.shape}
-                strokeColor="#0000FF"
+                strokeColor={route.colors}
                 strokeOpacity={0.8}
-                 strokeWeight={2} />;
+                strokeWeight={2} />;
         
         polylines.push(busPolyline);
        });
       }
+    console.log(polylines, markers);
+    console.log(stopLat, stopLng);
+    this.props.setMapTimetable(null, null, markers, polylines, stopLat, stopLng);
     });
-  console.log(polylines, markers);
-  this.props.setMapTimetable(null, null, markers, polylines);
+  //console.log(polylines, markers);
+  //console.log(stopLat, stopLng);
+  //this.props.setMapTimetable(null, null, markers, polylines, stopLat, stopLng);
 
   let timetables = null;
     fetch('/api/timetables/'+stopNumber)
     .then((response) => response.json())
     .then((responseJson) => {
+    console.log(responseJson);
     if (responseJson.error){
         alert("No more buses scheduled for this stop today. Please try again tomorrow.");
     }else{
@@ -202,20 +221,17 @@ getTimetables(option){
 render() { 
     //styles defined here
     let styles = {
-		//example below
-	//	timetable: {
-	//		height: '100%',
-	//	},
+        timeTableText:{
+            color: 'white'
+        }
     }
-	//Access styles in html elements through inline styling, ex. <div style={styles.timetable}> </div>
-    //html elements go inside return below.
 
     const defaultOption = null;
 
 	return (
        <div>
          <div className="form-group">
-             <h4>Find stops near:</h4>
+             <h4 style={styles.timeTableText}>Find stops near:</h4>
              <TimetableAuto isGoogleLoaded={this.props.isGoogleLoaded} changeCloseStops={this.changeCloseStops} />
          </div>
         {/*
@@ -231,7 +247,7 @@ render() {
          </div>
         */}
          <div className="form-group">
-                <h4>Stop Timetables:</h4>
+                <h4 style={styles.timeTableText}>Stop Timetables:</h4>
                 <Dropdown
                    className='quickTimesDropdown'
                    menuClassName='list-group makeScroll'

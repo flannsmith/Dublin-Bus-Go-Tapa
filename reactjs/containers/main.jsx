@@ -106,12 +106,14 @@ export default class Main extends React.Component {
     });
  }
 
-setMapTimetable(startM, endM, directionM, polyline){
+setMapTimetable(startM, endM, directionM, polyline, stopLat, stopLng){
+let newCenter = {lat: stopLat, lng: stopLng};
 this.setState({
         startMarker: startM,
         endMarker: endM,
         directionMarkers: directionM,
-        polyline: polyline
+        polyline: polyline,
+        center: newCenter
     });
 }
 
@@ -299,14 +301,14 @@ getUserDetails(){
     let username = responseJson.username;
     console.log(username)
     points = responseJson.points;
-    leaderBoardDetails.push(<thead><tr><th scope="col">Username</th><th scope="col">Points</th></tr></thead>)
+    leaderBoardDetails.push(<thead><tr><th scope="col">Username</th><th scope="col">Points</th><th scope="col">Distance travelled on Dublin Bus</th></tr></thead>)
     let allLboardpoints = [];
     responseJson.leaderboard.map((lboardpoints)=>{
     
-    allLboardpoints.push(<tr><td>{lboardpoints.user}</td><td>{lboardpoints.points}</td></tr>)
+    allLboardpoints.push(<tr><td>{lboardpoints.user}</td><td>{lboardpoints.points}</td><td>{lboardpoints.distance_travelled}</td></tr>)
      });
     leaderBoardDetails.push(<tbody>{allLboardpoints}</tbody>);
-    userProfile.push(<div><h2>Username: {username}</h2><h3>Co2 Reduction Points: {points}</h3><h2>Leaderboard</h2><table className='tableStyle'>{leaderBoardDetails}</table></div>);
+    userProfile.push(<div className='user-profile'><i className="fa fa-user-circle userIcon" /><h2>{username}</h2><h3>Co2 Reduction Points: {points}</h3><h2>Leaderboard</h2><table className='tableStyle'>{leaderBoardDetails}</table></div>);
     //userProfile.push(</div>);
     
     

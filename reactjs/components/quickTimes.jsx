@@ -77,14 +77,14 @@ submit(event){
         if(responseJson["arrival time"]){
             let departureTime = responseJson["departure time"];
             let arrivalTime = responseJson["arrival time"];
-            departureTime = departureTime.slice(0, 4);
-            arrivalTime = arrivalTime.slice(0, 4);
+            departureTime = departureTime.slice(0, 5);
+            arrivalTime = arrivalTime.slice(0, 5);
             console.log(arrivalTime);
             this.setState({
                 loading: false,
-                eta: arrivalTime,
+                eta: departureTime,
                 showDirections: true,
-                departureTime: departureTime,
+                departureTime: arrivalTime,
              });
         }else{
             this.setState({

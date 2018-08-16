@@ -1,46 +1,57 @@
 {% extends "base.html" %} 
 {% load static %}
 {% block main %}
+<nav class="navbar navbar-light">
 
-<div id="login-form-body">
-    <div class="form-signin">
-        <form class="loginform" action="{% url 'dublinBus:login' %}" method="POST">
-            {% csrf_token %}
-            <!--{{ form }}-->
-            <img class="mb-4 center-block" src="./static/images/GoTapaLogo.png" alt="" width="200" height="120">
-            <!--  <h1 class="h3 mb-3 font-weight-normal text-center">Sign in</h1> -->
-            {% for field in form %}
-            <div class="input-group">
-                <input class="form-control" id="{{ field.id_for_label }}" maxlength="30" name="{{ field.html_name }}" placeholder="{{ field.html_name }}"
-                    type="{{ field.html_name }}" /> {{ field.errors }}
-            </div>
-            {% endfor %}
+	<div class="about-nav text-center">
+		<a class="navbar-brand p-1" id="about">About Us</a>
+	</div>
+    
 
+    <form class="form-inline">
+        <button class="btn btn-success" type="button"  onclick="openSignUp()">Sign Up</button>
+
+    </form>
+</nav>
+<form class="form-signin text-center"  action="{% url 'dublinBus:login' %}" method="POST" id="form-signin1">
+     {% csrf_token %}
+    <img class="mb-4" src="{% static 'images/GoTapaScreenshot.png' %}" alt="" width="300" height="190">
+    <div class="show-login">
+        <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+        {% for field in form %}
+        <div class="input-group ">
+            <input class="form-control" id="{{ field.id_for_label }}" maxlength="30" name="{{ field.html_name }}" placeholder="{{ field.html_name }}"
+                type="{{ field.html_name }}" required autofocus/> {{ field.errors }}
+        </div>
+        {% endfor %}
+        <!-- <input type="email" id="inputEmail" class="form-control" placeholder="Username" required autofocus>
+            <input type="password" id="inputPassword" class="form-control" placeholder="Password" required> -->
+        <!-- <div class="checkbox mb-3">
+                <label>
+                    <input type="checkbox" value="remember-me"> Remember me
+                </label>
+            </div> -->
         <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
-        
-        
-            
-            <div>
-              <p>  {{ invalid }} </p>
-            </div>
-           
-        
-        <p class="mt-5 mb-3 text-muted text-center">&copy; 2018</p>
-        </form>
-        {% if invalid %}
-        <div>
-        <p> Invalid</p>
-        </div>
-        {% endif %}
-        <form class="signupform" action="{% url 'dublinBus:signup' %}" method="POST">
-            {% csrf_token %}
-
-        <div id="signup-btn">
-            <button id="btn-signup" type="submit">Sign up</button>
-            </form>
-        </div>
+        <!-- <button type="submit" class="btn btn-success">Success</button> -->
     </div>
+    
+
+     {% for message in messages %}
+    <div class="error-message">
+        <a class="close" href="#" data-dismiss="alert">x</a>
+        {{ message }}
+    </div>
+    {% endfor %}
+
+</form>
+
+<div id='about-p'>
+    <p>'Go tapa' is the Irish phrase for 'quickly' or 'rapidly'. Our aim as an ethical, environmentally aware app is to enable
+        users to plan their Dublin Bus journey fast and hassle free. Sign up to activate your free user account and start
+        logging carbon bus points. Log your journey and earn bus points which can be redeemed for discounted journeys and
+        prizes. With every milestone achieved using Dublin Bus you are actively helping the environment and reducing the
+        amount of carbon emissions being released in Dublin.
+    </p>
+    <button class="btn btn-success mb-5" type="button" id="go-back-login">Go Back</button>
 </div>
-
-
 {% endblock %}

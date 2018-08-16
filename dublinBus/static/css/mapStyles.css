@@ -91,16 +91,22 @@ html {
     
     
 }*/
-
+.tableStyle{
+    text-align:center;
+    /*width: 50%;*/
+    margin: auto;
+    margin-bottom: 18%;
+    /*margin-right: 2%*/
+}
 .tableStyle th tr{
     border: 1px solid black;
-    /*align-content:center;
-    font:16px Arial, Helvetica, sans-serif;*/
+    align-content:center;
+    /*font:16px Arial, Helvetica, sans-serif;*/
     line-height: 40px;
     margin: 0 0 0 60px;
     padding: 50px; 
     font-family: fantasy;  
-    font-size:25px
+    font-size:15px
 }
 
 .tableStyle tr:nth-child(odd) {
@@ -108,9 +114,10 @@ html {
 }
 
 .tableStyle th {
-    background-color: white;
+    background-color: lightgrey;
     text-align: center;
     padding: 10px;
+    border: 1px solid black;
 }
 .tableStyle td {
     padding: 10px; 
@@ -118,5 +125,11 @@ html {
     text-align: center;
     border: 1px solid black;
     font-family: fantasy;
-    font-size: 25px;
+    font-size: 15px;
+}
+.user-profile{
+    text-align: center;
+    /*padding-left: 10px;*/
+    display: block;
+    font: 10px; 
 }

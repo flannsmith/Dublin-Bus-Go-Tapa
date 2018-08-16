@@ -84,6 +84,7 @@ class UserFavourites(models.Model):
 class Userpoints(models.Model):
     user_id = models.ForeignKey(User, on_delete=models.CASCADE)
     dublin_bus_points = models.IntegerField()
+    distance_travelled_on_DublinBus=models.DecimalField(max_digits=10, decimal_places=3)
 
 class Userlocation(models.Model):
     user_id=models.ForeignKey(User, on_delete=models.CASCADE)

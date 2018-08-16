@@ -4,7 +4,6 @@ import Fav from "../components/favourites"
 import QuickTimes from "../components/quickTimes"
 import Timetables from "../components/timetables"
 import LogoutUser from "../components/logoutUser"
-//import {browserHistory} from 'react-router';
 import { Redirect } from 'react-router-dom'
 
 export default class Nav extends React.Component {
@@ -19,40 +18,11 @@ export default class Nav extends React.Component {
         timetables: false
     };
 }
-/*
-toggleQuickTimes(){
-    this.setState({
-        quickTimes: !this.state.quickTimes,
-        favourites: false,
-        timetables: false
-    });
-}
 
-toggleFavourites(){
-    this.setState({
-        favourites: !this.state.favourites,
-        timetables: false,
-        quickTimes: false
-    });
-}
-
-toggleTimetables(){
-    this.setState({
-        timetables: !this.state.timetables,
-        quickTimes: false,
-        favourites: false
-    });
-}
-*/
 logoutUser(){
     console.log(React.version);
- //   this.preventDefault();
     fetch('/logout',{method: "GET", credentials: 'same-origin'})
-  //  browserHistory.push('/');
-  //  var transitionTo = Router.transitionTo;
-   // transitionTo('your_route_name', query={keyword: input_value});
    return <Redirect to='/' />
-  //  window.locaton='/';
 }
 
 
@@ -93,11 +63,14 @@ logoutUser(){
     },
       icon: {
         fontSize: '24px',
-        float: 'right'
+        float: 'right',
+        paddingRight: '20px',
+        paddingTop: '5px'
     },
       iconLeft: {
         fontSize: '24px',
-        paddingRight: '15px'
+        paddingRight: '15px',
+        paddingLeft: '20px'
     },
      panel: {
         marginTop: '50px',
@@ -105,7 +78,10 @@ logoutUser(){
     },
     panelTitle: {
         display: 'inline-block'
-    }
+    },
+    logout: {
+        backgroundColor: 'white'
+    },
     }
 
     let nav_class = this.props.display ? "sidebarOpen" : "sidebarClosed";
@@ -121,7 +97,7 @@ logoutUser(){
                   <div className="bar2side"></div>
                   <div className="bar3side"></div>
              </div>
-           <img src={'/static/images/GoTapaLogo.png'} style={styles.image} /> 
+           <img src={'/static/images/GoTapaScreenshot.png'} style={styles.image} /> 
         <div className="panel panel-default" style={styles.panel}>
           <div className="panel-heading phead" onClick={this.props.toggleJourneyPlanner}>
              <i className="fa fa-bus" style={styles.iconLeft}></i><h3 className="panel-title" style={styles.panelTitle}>Journey Planner</h3><i className="fa fa-angle-down" style={styles.icon}></i>
@@ -136,12 +112,6 @@ logoutUser(){
             <div className="panel-body pbody" style={styles.quickTimes}>
              <QuickTimes mapRef={this.props.mapRef} setQuickTimes={this.props.setQuickTimes} />
              </div>
-            {/*<div className="panel-heading" onClick={this.toggleFavourites}>
-                <h3 className="panel-title">Favourites</h3>
-            </div>
-            <div className="panel-body" style={styles.favourites}>
-                <Fav submit={this.props.submit_fav}/>
-            </div>*/}
             <div className="panel-heading phead" onClick={this.props.toggleTimetables}>
                 <i className="fa fa-calendar" style={styles.iconLeft}></i><h3 className="panel-title" style={styles.panelTitle}>Timetables</h3><i className="fa fa-angle-down" style={styles.icon}></i>
             </div>
@@ -151,15 +121,11 @@ logoutUser(){
             <div className="panel-heading phead" onClick={this.props.userProfile}>
                 <i className="fa fa-user" style={styles.iconLeft}></i><h3 className="panel-title" style={styles.panelTitle}>View Your profile</h3>
             </div>
-            {/*<form action='/logout' method="POST"> */}
             <a href="/logout">
-                <div className="panel-body pbody" id="logout">
+                <div className="panel-body pbody" id="logout" style={styles.logout}>
                     <i className="fa fa-sign-out" style={styles.iconLeft}></i><h3 className="panel-title" style={styles.panelTitle}>Logout</h3>
                 </div>
             </a>        
-            {/* </form>*/}                  
-         
-            
           </div>
         </div>
       </nav>

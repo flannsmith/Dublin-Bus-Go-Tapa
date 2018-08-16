@@ -23,7 +23,7 @@ export default class TimetableAuto extends React.Component {
     geocodeByAddress(address)
       .then(results => getLatLng(results[0]))
       .then(latLng => {
-            console.log('Success', latLng);
+            this.setState({ address });
             //fetch here for 5 closest stops
             //chage options of dropdown.
             let options = []
@@ -43,7 +43,6 @@ export default class TimetableAuto extends React.Component {
   };
 
  componentWillReceiveProps(nextProps) {
-     // You don't have to do this check first, but it can help prevent an unneeded render
      if (nextProps.isGoogleLoaded !== this.state.isGoogleLoaded) {
         this.setState({ 
         mode: nextProps.isGoogleLoaded,
