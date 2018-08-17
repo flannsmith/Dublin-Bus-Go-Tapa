@@ -8,3 +8,5 @@ node_modules
 mysite/settings.py
 fixfilename.py
 deleteold.py
+/dublinBus/static/timetabledump.bin
+/dublinBus/static/neuraltimetabledump.bin

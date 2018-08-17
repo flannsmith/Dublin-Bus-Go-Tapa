@@ -89,7 +89,7 @@ if(this.state.mode){
         <div>
             <input
               {...getInputProps({
-                placeholder: 'Search Places ...',
+                placeholder: this.props.placeHolder,
                 className: 'location-search-input form-control',
                 style: styles.topInput
              })}

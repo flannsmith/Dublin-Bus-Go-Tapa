@@ -301,6 +301,7 @@ getUserDetails(){
     let username = responseJson.username;
     console.log(username)
     points = responseJson.points;
+    let u_message=responseJson.user_message;
     leaderBoardDetails.push(<thead><tr><th scope="col">Username</th><th scope="col">Points</th><th scope="col">Distance travelled on Dublin Bus</th></tr></thead>)
     let allLboardpoints = [];
     responseJson.leaderboard.map((lboardpoints)=>{
@@ -308,7 +309,7 @@ getUserDetails(){
     allLboardpoints.push(<tr><td>{lboardpoints.user}</td><td>{lboardpoints.points}</td><td>{lboardpoints.distance_travelled}</td></tr>)
      });
     leaderBoardDetails.push(<tbody>{allLboardpoints}</tbody>);
-    userProfile.push(<div className='user-profile'><i className="fa fa-user-circle userIcon" /><h2>{username}</h2><h3>Co2 Reduction Points: {points}</h3><h2>Leaderboard</h2><table className='tableStyle'>{leaderBoardDetails}</table></div>);
+    userProfile.push(<div className='user-profile'><i className="fa fa-user-circle userIcon" /><h2>{username}</h2><h3>Co2 Reduction Points: {points}</h3><p>{u_message}</p><h2>Leaderboard</h2><p>Based on distance travelled on Dublin Bus</p><table className='tableStyle'>{leaderBoardDetails}</table></div>);
     //userProfile.push(</div>);
     
     

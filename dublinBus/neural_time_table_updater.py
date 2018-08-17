@@ -4,13 +4,14 @@ import time
 from subprocess import call
 import os
 if __name__ == '__main__':
+    just_loaded = True
     while True:
         now = datetime.datetime.now()
         seconds_since_midnight = (now - now.replace(hour=0, minute=0, second=0, microsecond=0)).total_seconds()
         
-        if not os.path.exists('static/neuraltimetabledump.bin'):
+        if just_loaded:
             can_build = True
-        
+            just_loaded = False
         elif seconds_since_midnight < 7200:
             time.sleep(7200 - seconds_since_midnight)
             can_build = True
@@ -27,6 +28,7 @@ if __name__ == '__main__':
             n = simple_network3.simple_network()
             n.generate_time_tables()
             for node in n.nodes:
+                print(node)
                 n.nodes[node].timetable.concat_and_sort()
             for node in n.nodes:
                 try:

@@ -45,6 +45,12 @@ button:hover {
 /* Add padding to container elements */
 .container {
     padding: 16px;
+    margin-top: 15px;
+/*     -webkit-box-sizing: border-box; /* Border-box will resize div depending on browser */
+/*     -moz-box-sizing: border-box;     */
+/*     box-sizing: border-box;       */ */
+}
+
 }
 
 /* The Modal (background) */

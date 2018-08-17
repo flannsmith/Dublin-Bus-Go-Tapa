@@ -12,6 +12,7 @@ export default class Form extends React.Component {
 }
 
   render() {
+   
     //styles defined here
     let styles = {
       journeyPlannerContent: {
@@ -49,11 +50,11 @@ export default class Form extends React.Component {
         <form onSubmit={this.props.submit}>
        		<div className="form-group">
     			{/* Same function call process as above but for input */}
-                <JourneySearchInput isGoogleLoaded={this.props.isGoogleLoaded} journeyPlannerFormStart={this.props.journeyPlannerFormStart} />
+                <JourneySearchInput placeHolder="Enter your Source" isGoogleLoaded={this.props.isGoogleLoaded} journeyPlannerFormStart={this.props.journeyPlannerFormStart} />
 				{/*<input type="text" style={styles.input} name="start" className="form-control" placeholder="Departing from: eg. Abbey Street" onChange={this.props.input} /> */}
  			 </div>
 			<div className="form-group" style={styles.secondLocation}>
-                <JourneySearchInput isGoogleLoaded={this.props.isGoogleLoaded} journeyPlannerFormEnd={this.props.journeyPlannerFormEnd} />
+                <JourneySearchInput placeHolder="Enter your destination" isGoogleLoaded={this.props.isGoogleLoaded} journeyPlannerFormEnd={this.props.journeyPlannerFormEnd} />
                {/* <input type="text"  style={styles.input} name="stop" className="form-control" placeholder="Destination: eg. Howth" onChange={this.props.input} /> */}
              </div> 
           <div className="form-group" style={styles.calender}>

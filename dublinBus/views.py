@@ -40,13 +40,10 @@ def network_updater():
             time.sleep((3600*24) - seconds + 8000)
         else:
             pass
-        while os.path.exist('dublinBus/static/.build_lock'):
-            time.sleep(60)
+        
         with open('dublinBus/static/timetabledump.bin','rb') as handle:
             
-            while network.graph_lock:
-                time.sleep(20)
-                pass
+            
             network.nodes = pickle.load(handle)
             network.properly_add_foot_links()
             network.prepare_dijkstra()
@@ -155,12 +152,14 @@ def get_timetable(request,stop):
     global network
     #get the date time at midnight
     dt = datetime.datetime.now()
-    d = network.get_stop_time_table(str(stop),dt)
-    if d is None or len(d) == 0:
-        return JsonResponse({'timetable':d,'error':True},safe=False)
-    else:
-        return JsonResponse({'timetable':d,'error':False},safe=False)
-
+    try:
+        d = network.get_stop_time_table(str(stop),dt)
+        if d is None or len(d) == 0:
+            return JsonResponse({'timetable':d,'error':True},safe=False)
+        else:
+            return JsonResponse({'timetable':d,'error':False},safe=False)
+    except:
+        return JsonResponse({'timetable':[],'error':True},safe=False)
 def get_shape(request, stop, link):
     """
     Gets a list of coordinates between two stops.
@@ -226,7 +225,8 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat, destination_Lon,day
     Find the user a route using the network object
     """
     try:
-        #we were unable to write django urls with negative floats, so this just automatically corrects all of the floats.
+        #we were unable to write django urls with negative floats, so this just automatically corrects all of the longitudes.
+        # We should have solved this problem by now :(
         origin_Lat = float(origin_Lat)
         origin_Lon = float(origin_Lon)
         starttime = float(starttime)
@@ -248,6 +248,8 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat, destination_Lon,day
         resp['error'] = False
         return JsonResponse(resp,safe = False)
     except Exception as e:
+        #there is a lingering error and sometimes, but very rarely, it just breaks alltogether.
+        #This is the unsatisfactory solution.. 
         resp = {'error':True,'error-type':str(e)}
         return JsonResponse(resp,safe=False)
 
@@ -546,6 +548,10 @@ def get_user_profile(request):
     username=request.user.username
     user_id=request.user.id
     u_points=Userpoints.objects.get(user_id_id=user_id).dublin_bus_points
+    if u_points==0:
+        user_message="Use Dublin Bus to save the environment. "
+    else:
+        user_message="Well Done for saving the planet"
     users_max_points=Userpoints.objects.order_by('-dublin_bus_points')[:5]
     print(users_max_points)
     leaderboard=[]
@@ -555,7 +561,7 @@ def get_user_profile(request):
         print(username_leaderboard)
         leaderboard.append({'user': username_leaderboard.username, 'points':userid.dublin_bus_points,'distance_travelled':userid.distance_travelled_on_DublinBus})
 
-    return JsonResponse({'username':username, 'points':u_points, 'leaderboard':leaderboard}, safe=False)        
+    return JsonResponse({'username':username, 'points':u_points, 'leaderboard':leaderboard, 'user_message': user_message}, safe=False)        
 #@authentication_classes((SessionAuthentication, BasicAuthentication))
 #@permission_classes((IsAuthenticated,))
 #def example_view(request, format=None):

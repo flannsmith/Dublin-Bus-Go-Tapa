@@ -133,3 +133,11 @@ html {
     display: block;
     font: 10px; 
 }
+
+@media  only screen and (max-width:768){
+
+.user-profile{
+    font-size: 3px;
+    background-color:black;
+}
+} 

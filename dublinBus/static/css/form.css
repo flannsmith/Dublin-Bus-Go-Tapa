@@ -7,7 +7,6 @@
    color: white;
    text-align: center;
 }
-
 .form-signin {
   width: 100%;
   max-width: 330px;
@@ -139,6 +138,8 @@ button.btn.btn-lg.btn-primary.btn-block{
 } 
 
 .error-message{
-    margin-left: 30%;
+    font-family: 'Courier';
+    text-align: center;
+    margin-top: 3px;
     font: 30px;
 }

@@ -401,25 +401,35 @@ routeFinder(address, fromLocation){
           />
         );
      });
-   
-     /*let lineSymbol = {
-          path: 'M 0,-1 0,1',
-          strokeOpacity: 1,
-          scale: 4
-        };*/ 
+  
+    var lineSymbol = {
+         path: 'M 0,-1 0,1',
+         strokeOpacity: 1,
+         scale: 2
+      };
+
+     var icons = [{
+          icon: lineSymbol,
+          offset: '0',
+          repeat: '20px'
+      }]
+ 
      responseJson.shapes.walk.map((stop) => {
         directionsPolylines.push(
           <Polyline
           path={stop}
           strokeColor="#ff0707"
-          strokeOpacity={0.5}
+          strokeOpacity={0}
           strokeWeight={1.5}
-          />
+          icons={icons} 
+         />
         );
      });
       
-      let lastMarker = responseJson.data[0];
+      let lastMarker = responseJson.data[responseJson.data.length -1];
+      console.log(responseJson.data.length -1);
       let stopTime = new Date(lastMarker.time * 1000).toISOString().substr(11, 8);
+      console.log(stopTime);
       stopTime = stopTime.slice(0, 5);
       this.props.setTime(stopTime);
  
@@ -454,7 +464,6 @@ routeFinder(address, fromLocation){
       this.props.showDirections(directions);
       this.props.setDirectionMpolyline(stops, directionsPolylines);
       this.setState({
-        // center: routeShape[0][0],
         zoom: 12,
         searchName: address,
       });
@@ -655,7 +664,8 @@ routeFinder(address, fromLocation){
         marginLeft : "5%",
     },
       table: {
-        marginTop: '50px'
+        marginTop: '50px',
+        marginBottom: '60px'
       },
       eta: {
         border: '0px'
@@ -744,12 +754,6 @@ routeFinder(address, fromLocation){
         console.log(this.state.time);
         this.sendLocation();  
       }
-    
-//     const button = React.createElement('div', {
-  //               ref: 'xButton',
-    //             onClick: e => this.props.onClick(e, this.refs.xButton),
-      //           className: 'container'
-        //    });
 
       return (
        <div className={googleMap_class} >
