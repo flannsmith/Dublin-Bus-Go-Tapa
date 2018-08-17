@@ -20,11 +20,7 @@ export default class LocationSearchInput extends React.Component {
       .then(results => getLatLng(results[0]))
       .then(latLng => {
             this.setState({ address });
-            console.log('Success', latLng);
            	var e = null;
-    		//if (!this.props.route.sidebarOpen){
-        	//	this.props.onClick(e, this.props.xButton);
-    		// }
 			let destinationMarker = <Marker
                 id = "End Marker"
                 position={latLng}

@@ -7,3 +7,11 @@ function openSignUp(){
 function goBackToSignin(){
   	window.location.href = "https://csi420-01-vm8.ucd.ie";
 }
+
+
+$("#cancelbtn").on("click", function() {
+     console.log('Pinchado')
+
+// $("#cancelbtn").click(function(){
+//     $("#form-control.user-input").val('');
+// });

@@ -20,7 +20,6 @@ export default class Nav extends React.Component {
 }
 
 logoutUser(){
-    console.log(React.version);
     fetch('/logout',{method: "GET", credentials: 'same-origin'})
    return <Redirect to='/' />
 }

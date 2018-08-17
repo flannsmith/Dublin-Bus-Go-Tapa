@@ -40,7 +40,6 @@ export default class Main extends React.Component {
    this.toggleLoading = this.toggleLoading.bind(this);
    this.setMapTimetable = this.setMapTimetable.bind(this);
 
-//   this.logoutUser = this.logoutUser.bind(this);
     //set the state of this componet dictionary of data we want to store
    this.state = {
      formDisplay: true,
@@ -309,7 +308,7 @@ getUserDetails(){
     allLboardpoints.push(<tr><td>{lboardpoints.user}</td><td>{lboardpoints.points}</td><td>{lboardpoints.distance_travelled}</td></tr>)
      });
     leaderBoardDetails.push(<tbody>{allLboardpoints}</tbody>);
-    userProfile.push(<div className='user-profile'><i className="fa fa-user-circle userIcon" /><h2>{username}</h2><h3>Co2 Reduction Points: {points}</h3><p>{u_message}</p><h2>Leaderboard</h2><p>Based on distance travelled on Dublin Bus</p><table className='tableStyle'>{leaderBoardDetails}</table></div>);
+    userProfile.push(<div className='user-profile'><i className="fa fa-user-circle userIcon" /><h2>{username}</h2><h3>Co2 Reduction Points: {points}</h3><p>{u_message}</p><h2>Leaderboard</h2><p>Based on number of trips and distance travelled on Dublin Bus</p><table className='tableStyle'>{leaderBoardDetails}</table></div>);
     //userProfile.push(</div>);
     
     
@@ -324,13 +323,6 @@ getUserDetails(){
      });
    });
  }
-
- //logoutUser(){
-  //  console.log("in logout user")
-   // this.preventDefault();
-   // fetch('/logout',{method: "GET", credentials: 'same-origin'})
-   // return <Redirect to='/' />
- // }
 
  //After drawing a route, changes the state back to false. This function is passed to the MapContainer componet which will draw the route. ie. <MapContainer reset={this.resetDraw} />
  resetDraw(event) {
@@ -357,7 +349,7 @@ getUserDetails(){
     //checks weather the sidebar is open or not in the state of this component and passes the variables as componets to the Nav and Mapcontainer to use in their CSS properties.
     let isSidebarOpen = this.state.sidebarOpen ? true : false;
     let isMapContainerWide = this.state.sidebarOpen ? true : false;
-    //let isJourneyPlannerOpen = this.state.formDisplay ? false : true;
+
     return (
       <div id="mainContent" className="fullHeight">
         <Nav setMapTimetable={this.setMapTimetable} toggleQuickTimes={this.toggleQuickTimes} toggleTimetables={this.toggleTimetables} currentLocationLat={this.state.currentLocationLat} currentLocationLon={this.state.currentLocationLon}  userProfile={this.getUserDetails} secondLocationOpen={this.state.secondLocationOpen} calenderOpen={this.state.calenderOpen} submitOpen={this.state.submitOpen}  onClick={this.toggleNavBar} setTimeTables={this.setTimeTables} mapRef={this.state.mapRef} setQuickTimes={this.setQuickTimes} quickTimes={this.state.quickTimes} timetables={this.state.timetables}  journeyPlanner={this.state.journeyPlanner} toggleJourneyPlanner={this.toggleJourneyPlanner} isGoogleLoaded={this.state.isGoogleLoaded} showMarkers={this.showMarkers} handleDate={this.handleDate} time={this.state.eta} display={isSidebarOpen} submit={this.handleSubmit} input={this.handleInputChange} loading={this.state.loading} journeyPlannerFormStart={this.journeyPlannerFormStart} journeyPlannerFormEnd={this.journeyPlannerFormEnd} showDirections={this.state.showDirections} userDirections={this.state.userDirections} submit_fav={this.handleSubmitFav}/>

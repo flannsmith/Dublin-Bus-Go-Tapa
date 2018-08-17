@@ -43,8 +43,9 @@ img.mb-4{
   margin-bottom: 10px;
   width:100%;
   height:40%;
- 
   padding-bottom: 20px;
+  position: absolute;
+  z-index: -1;
 }
 
 .footer {
@@ -67,6 +68,7 @@ img.mb-4{
   display:inline-block;
 /*   position: relative; */
   z-index: 2;
+  margin-bottom: 10rem;
 }
 
 .form-signin .checkbox {

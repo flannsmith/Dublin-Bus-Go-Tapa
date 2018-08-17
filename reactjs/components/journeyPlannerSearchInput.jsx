@@ -26,9 +26,6 @@ export default class JourneySearchInput extends React.Component {
       .then(results => getLatLng(results[0]))
       .then(latLng => {
             this.setState({ address });
-            console.log('Success', latLng);
-            console.log(this.props.journeyPlannerFormStart);
-            console.log(this.props.journeyPlannerFormEnd);
             this.props.journeyPlannerFormStart ? this.props.journeyPlannerFormStart(this.state.address, latLng.lat, latLng.lng) : null;
             this.props.journeyPlannerFormEnd ? this.props.journeyPlannerFormEnd(this.state.address, latLng.lat, latLng.lng, latLng) : null;
         })
@@ -38,7 +35,6 @@ export default class JourneySearchInput extends React.Component {
   componentWillReceiveProps(nextProps) {
      // You don't have to do this check first, but it can help prevent an unneeded render
      if (nextProps.isGoogleLoaded !== this.state.isGoogleLoaded) {
-       console.log("setting state too much");
        this.setState({ 
         mode: nextProps.isGoogleLoaded,
         isGoogleLoaded: true

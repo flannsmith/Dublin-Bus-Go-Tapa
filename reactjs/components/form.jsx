@@ -63,16 +63,6 @@ export default class Form extends React.Component {
 		<div className="form-group" style={styles.submitOpen}>
 			<button type="submit" className="btn btn-info" style={styles.formSubmit}> Submit </button>
           </div>
-        {/*<div style={styles.loading}>
-           <ReactLoading type={"bubbles"} color="rgb(3, 79, 152)" height={'100%'} width={'100%'}/>
-          </div>        
-         <div style={styles.directions}>
-           <li className="list-group-item">
-            <p className="lead">ETA:</p>
-            <p className="lead">{this.props.eta}</p>
-           </li>
-            {this.props.userDirections}
-          </div>  */}  
         </form>
       </div>
     )

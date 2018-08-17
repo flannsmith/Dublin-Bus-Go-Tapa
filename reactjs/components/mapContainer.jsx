@@ -11,7 +11,6 @@ export class MapContainer extends Component {
     //Define all the  functions that are to be bound to this component. This is needed as when bable compiles all jsx files into one big bundle the browser will not be able define what "this" is related to. Doing these bindings configures it so the browser knows they are related to this compoent (class).
     this.onMarkerClick = this.onMarkerClick.bind(this);
     this.onMapClicked = this.onMapClicked.bind(this);
-  //  this.handleFormSubmit = this.handleFormSubmit.bind(this);
     this.setSearchInputElementReference = this.setSearchInputElementReference.bind(this);
     this.geocodeAddress = this.geocodeAddress.bind(this);
     this.requestLocation = this.requestLocation.bind(this);
@@ -44,15 +43,15 @@ export class MapContainer extends Component {
       alreadyRequestedlocation: false, //stops bug that browser keeps requesting user location
       routeCoordsBus: [], //array of bus route location objects to be drawn as polyline
       routeCoordsWalking: [], //array of walking location objects to be drawn as polyline
-      destinationLat: 0.0, 
-      destinationLng: 0.0,
+      destinationLat: 0.0, //search desinations latitude
+      destinationLng: 0.0,//search desinations longitude
       directionMarkers: null, //contianer for the array of marker objects on a given route
       polyline: null, //container for polyline objects for a given route.
-      startMarker: null,
-      endMarker: null,
-      timer: false,
-      stopTimer: false,
-      time: 1,
+      startMarker: null, //container for start stop marker
+      endMarker: null, //container for start end marker
+      timer: false, // boolean to turn on timer that sends location of user to backend
+      stopTimer: false, // boolean to stop timer
+      time: 1, // counter that is used to send 
       notLoadedYet: true,
       directions: false,
       timetables: false,
@@ -156,7 +155,6 @@ export class MapContainer extends Component {
   }
 
   changeMapState(results, address, destinationMarker, lat, lng){
-    console.log(results, address, destinationMarker, lat, lng);  
     this.props.setStartEndMarker(null, destinationMarker);
     this.setState({
           center : results, //chages center of map and center marker
@@ -168,7 +166,7 @@ export class MapContainer extends Component {
       );
   }
 
-  //BELOW CODE IS NOW REDUNDANT AS WE ARE USING A REACT COMPONENT THAT CALLS THE GEOCODER API FOR US.
+  //BELOW CODE IS NOW REDUNDANT AS WE ARE USING A REACT COMPONENT THAT CALLS THE GEOCODER API FOR US. Left here as a backup if this react componet should break.
  
 //  handleFormSubmit(submitEvent){
     //Function to gather form data and send to geocodeAddress funciton
@@ -239,8 +237,7 @@ export class MapContainer extends Component {
         name={destinationName}
         onClick={this.onMarkerClick}
      />
-
-    console.log(originName, startLat, startLng, destinationName, destLat, destLng, destLatLng);
+        
     this.props.setStartEndMarker(originMarker, destinationMarker);
     this.setState({
         zoom: 12, 
@@ -270,8 +267,6 @@ export class MapContainer extends Component {
 
       //if result is found do this
       if (status === google.maps.GeocoderStatus.OK) {
-            console.log("geocodeAddress RESULTS:");
-            console.log(results);
             callback(results); //used to exit function
          }
 
@@ -338,11 +333,9 @@ routeFinder(address, fromLocation){
 
   //let routeShape = {}; //holds all the direction objects
   let stops = []; //holds all markers for a route
-  console.log("fetch('/api/routefinder/"+originLat+"/"+originLng+"/"+destLat+"/"+destLng+"/"+dayOfWeek+'/'+timeInSeconds+")");
   fetch('/api/routefinder/'+originLat+'/'+originLng+'/'+destLat+'/'+destLng+'/'+dayOfWeek+'/'+timeInSeconds) //API call
     .then((response) => response.json())
     .then((responseJson) => {
-      console.log("response json is here:", responseJson);
      if(responseJson.data){
 /*  Below block of code now redudant as backend code provides walking and bus objects already broken up, left here as backup if new api fails.
 
@@ -427,34 +420,9 @@ routeFinder(address, fromLocation){
      });
       
       let lastMarker = responseJson.data[responseJson.data.length -1];
-      console.log(responseJson.data.length -1);
       let stopTime = new Date(lastMarker.time * 1000).toISOString().substr(11, 8);
-      console.log(stopTime);
       stopTime = stopTime.slice(0, 5);
       this.props.setTime(stopTime);
- 
-  /*    for (var index in routeShape){
-        if (routeShape[index][0].color == "walking"){
-          directionsPolylines.push(
-          <Polyline
-          path={routeShape[index].slice(1,)}
-          strokeColor="#ff0707"
-          strokeOpacity={0.8}
-          strokeWeight={2}
-          key={index}/>
-        );
-        } else {
-          directionsPolylines.push(
-          <Polyline
-          path={routeShape[i].slice(1,)}
-          strokeColor="#0000FF"
-          strokeOpacity={0.8}
-          strokeWeight={2}
-          key={i}/>
-        );
-        }
-
-      } */
 
       let directions = [];
       responseJson.text.map((stop) => {
@@ -480,7 +448,6 @@ routeFinder(address, fromLocation){
 
   requestLocation(){
     //Function to find the current location of user from browser
-    console.log("requestingLocation");
     var self = this;
 
     var options = {
@@ -539,7 +506,6 @@ routeFinder(address, fromLocation){
     fetch('/api/shapes/twostops/'+start+'/'+stop).then(function(response) { //API call.
       return response.json();
     }).then(data => {
-      //CHANGE THIS make api "lng" not "lon" and this computation is undeeded
       data.shape.map((point) => {
         routeShape.push({lat: point.lat, lng: point.lon})
       });
@@ -597,12 +563,6 @@ routeFinder(address, fromLocation){
         display: this.props.route.showDirections ? 'block' : 'none', //checks weather directions for a route is needed.
         marginTop: '50px',
         marginBottom: '50px'
-        //  position: 'absolute',
-        //backgroundColor: 'white',
-       // height: '100%',
-       // marginLeft: '85%',
-       // width: '15%',
-       // padding: '10px',
       },
       container: {
          display: 'inline-block',
@@ -616,7 +576,6 @@ routeFinder(address, fromLocation){
         paddingTop: '15px',
         paddingBottom: '15px',
         textAlign: 'right',
-        // Original blue: backgroundColor: 'rgb(3, 79, 152)',
         backgroundColor: 'rgb(255, 204, 1)',
         height: '60px',
         boxShadow: '1px 1px 5px 1px #888888',
@@ -698,51 +657,11 @@ routeFinder(address, fromLocation){
     }
     
     if (this.props.google && this.state.notLoadedYet) {
-      console.log("Google is Loaded");
       this.setState({
           notLoadedYet: false
         });
       this.props.isGoogleLoaded(true);
     }
-
-   /* if (!this.state.alreadyRequestedlocation){
-      //if the browser has not already requested the location do this.
-      if('geolocation' in navigator){
-        // geolocation is supported
-        this.requestLocation();
-      }else{
-        // no geolocation
-        let msg = "Sorry, looks like your browser doesn't support geolocation";
-        this.setState({
-          searchName: msg, //sets message to this
-          alreadyRequestedlocation: true
-        })
-      }
-    }*/
-
-    //  **CHANGE THIS** - Need to optimise, do this in different file before import, uneeded computation here.
-    // let allStops = [];
-    // var i;
-    // for (i in stops){
-    //   allStops.push(stops[i]);
-    // }
-
-    //adds all the stops to marker array
-    // let markers = [];
-    // allStops.map(marker => {
-    //   markers.push(
-    //     <Marker
-    //       position={{lat: marker.lat, lng: marker.lon}}
-    //       title={marker.stop_name}
-    //       name={marker.stop_name}
-    //       onClick={this.onMarkerClick}
-    //       icon={{
-    //         url: "../static/images/bus_stop.png",
-    //         anchor: new google.maps.Point(32,32),
-    //         scaledSize: new google.maps.Size(10,10)
-    //       }}
-    //     />)
-    //   });
 
       // Check weather to draw the route or not.
       if (this.props.route.drawRoute){
@@ -783,7 +702,7 @@ routeFinder(address, fromLocation){
          </div>
 
          <div style={styles.loading}>
-           <ReactLoading type={"bubbles"} color="rgb(3, 79, 152)" height={'100%'} width={'100%'}/>
+           <ReactLoading type={"bubbles"} color="rgb(3, 79, 152)" height={'100%'} width={'100%'} className='loadingBubbles' />
          </div>
 
          <div style={styles.directions}>

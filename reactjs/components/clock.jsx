@@ -8,13 +8,7 @@ export default class Clock extends React.Component {
     this.tick = this.tick.bind(this);
     this.interval = this.interval.bind(this);
     
-  }    
-//  componentDidMount() {
-  //  this.intervalID = setInterval(
-      //() => this.tick(),
-    //  1000
-   // );
- // }
+  }
 
   stopTimer() {
     clearInterval(this.intervalID);

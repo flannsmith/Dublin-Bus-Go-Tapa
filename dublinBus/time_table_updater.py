@@ -6,6 +6,7 @@ import os
 """
 Script to run in background generating time tables once a day
 """
+print("Beginning run for ",datetime.datetime.now())
 if __name__ == '__main__':
     just_started = True
     while True:
@@ -33,8 +34,10 @@ if __name__ == '__main__':
             n.properly_add_foot_links()
             n.generate_time_tables()
             for node in n.nodes:
+                print(node)
                 n.nodes[node].timetable.concat_and_sort()
             for node in n.nodes:
+                print(node)
                 try:
                     del(n.nodes[node].models)
                     del(n.nodes[node].Y_scalers)
@@ -48,7 +51,7 @@ if __name__ == '__main__':
             f = open('static/timetablelog.log','a')
             f.write('Time tables dumped at ' + str(dt))
             f.close()  
+            break
             del(n)
-            del(simple_network)
-            call(['rm','static/.build_lock'])
+            del(simple_network4)
             print('built')

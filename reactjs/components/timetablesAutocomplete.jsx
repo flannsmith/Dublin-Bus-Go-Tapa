@@ -31,7 +31,6 @@ export default class TimetableAuto extends React.Component {
     fetch('/api/stopfinder/'+latLng.lat+'/'+lng)
     .then((response) => response.json())
     .then((responseJson) => {
-            console.log(responseJson);
             responseJson.stops.map((stop) => {
                 let item = { value: stop.stop_id, label: stop.info.stop_name, className: 'list-group-item' };
                 options.push(item);

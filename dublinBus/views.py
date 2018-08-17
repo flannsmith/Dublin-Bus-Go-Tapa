@@ -8,7 +8,6 @@ from django.http import HttpResponse
 from django.db import models
 from dublinBus.models import *
 from django.http import JsonResponse
-from dbanalysis.network import simple_network2
 import haversine
 from math import inf
 from threading import Thread
@@ -23,7 +22,8 @@ CREATE_NETWORK = False
 LOAD_NETWORK = True
 def network_updater():
     """
-    Function for loading updated network timetables. Run as thread.
+    Function for loading updated network timetables. Run as thread. Will try to reload new time tables at about
+    2am in the morning
     """
     global network
     with open('dublinBus/static/timetabledump.bin','rb') as handle:
@@ -45,13 +45,13 @@ def network_updater():
             
             
             network.nodes = pickle.load(handle)
-            network.properly_add_foot_links()
             network.prepare_dijkstra()
+            network.properly_add_foot_links()
         handle.close()
-
+        time.sleep(300)
 #Either create the network object from scratche
 if CREATE_NETWORK:
-    
+    #this is never used. We always have it set to load.
     network = simple_network2.simple_network()
     network.generate_time_tables()
     for node in network.nodes:
@@ -98,13 +98,13 @@ def journeyPlanner(request):
 
 def map_reader(request):
     """
-    Created in first two weeks of project. Now defunct, probably
+    Created in first two weeks of project. Still loads.
     """
     return render(request, 'busmap.html',{})
 
 def heatmap(request):
     """ 
-    Created in first two weeks of project. Also now defunct.
+    Created in first two weeks of project. Still loads.
     """
     return render(request, 'heatmap.html',{})
 
@@ -121,16 +121,25 @@ def dummy(request,day,week):
     return JsonResponse(d,safe=False)
 
 def get_stops(request):
+    """
+    Hopefully unused method
+    """
     global network
     stops = network.get_all_stops()
     return JsonResponse(stops, safe=False)
 
 def get_route_variation(request,routename,v):
+    """
+    Unused
+    """
     print(routename,v)
     global network
     route = network.get_route(routename,variation=v)
     return JsonResponse(route,safe=False)
 def get_route(request,routename):
+    """
+    Unused
+    """
     print(routename)
     global network
     routes = network.get_route(routename,all_variations=True)
@@ -202,6 +211,7 @@ def get_route_shape(request,routename,vari=0,api_response=True):
 def closest_stops(request,lat,lon):
     """
     Uses the stop finder class to find the closest (haversine distance) stop to a given lat/lon
+    This isn't used. Replaced with a method at the bottom of the file.
     """
     global network
     resp = network.stop_finder.find_closest_stops(lat,lon)
@@ -255,6 +265,9 @@ def dijkstra2(request,origin_Lat,origin_Lon,destination_Lat, destination_Lon,day
 
 #This view is to log the users in 
 def login_view(request):
+    """
+    Logs a user in
+    """
     if request.method == 'POST':
        form=AuthenticationForm(data=request.POST)
        if form.is_valid():
@@ -275,7 +288,9 @@ def login_view(request):
 
 #This view is to sign-up users 
 def signup_view(request):
-        
+    """
+    Returns the signup html form
+    """    
     if request.method == 'POST':
         form=UserCreationForm(request.POST)
         #username=request.POST['Username']
@@ -292,6 +307,9 @@ def signup_view(request):
 #This viw to log users out. 
 @login_required(login_url="/")
 def logout_view(request):
+    """
+    Logs the user out and redirects them to the homepage
+    """
     print("in logout ", request.user)
     logout(request)
     #form=AuthenticationForm()
@@ -300,6 +318,9 @@ def logout_view(request):
     return HttpResponseRedirect("/")
 #This view is for the users to change their password. But its not fully ready yet
 def change_password_view(request):
+    """
+    Changes the user's password
+    """
     user = User.objects.filter(id=3306)
     user.delete()
     if request.method=='POST':
@@ -313,6 +334,9 @@ def change_password_view(request):
     
 #View to display calendar and time of entry
 def user_favourites(request, loc_address, loc_name):
+    """
+    Unused
+    """
     print("in fav")
     #if request.user.is_authenticated:
     username=request.user
@@ -354,6 +378,7 @@ def user_location(request, origin_Lat, origin_Lon):
             f.write('\nsuccess '+str(username.username))
             f.close()
             return HttpResponse(status=200)
+        return HttpResponse(status=204)
     except Exception as e:
         #write an error on file. Used to debug whatever nginx is up to.
         f=open('/data/nginxerrorlog.log','a')
@@ -365,12 +390,13 @@ def user_location(request, origin_Lat, origin_Lon):
          #   print(user.dublin_bus_points)
          #   user.save()
 #     except:
-        return HttpResponse(status=200)
+        return HttpResponse(status=204)
 
 def get_ip(request):
     """
     Used to check the ip that nginx receives. 
     Important, because on Dublin bus at least, nginx seems to receive a slightly different ip to what google told us
+    This method saved us :)
     """
     import json
     
@@ -423,9 +449,11 @@ def get_stops_in_route(request,route,variation):
     Gets a list of all of the stops in a route.
     """
     global network
-    if network.selector.get_unavailable(route,variation):
-        return JsonResponse({'error':True,'error-type':'route unavailable'})
-    return JsonResponse(network.selector.stops_in_route(route,int(variation)),safe=False)
+    
+    try:           
+        return JsonResponse(network.selector.stops_in_route(route,int(variation)),safe=False)
+    except:
+         return JsonResponse({'error':True,'error-type':'route unavailable'})
 
 def get_routes_serving_stop(request,stop):
     """
@@ -476,6 +504,9 @@ def get_route_shape(request,route,variation,stopA,stopB,api_response=False):
     return JsonResponse(resp,safe=False)
 
 def routes_serving_stop(request,stop):
+    """
+    Unused
+    """
     global network
     data = network.stop_getter.routes_serving_stop(stop)
     if data is None:
@@ -485,7 +516,9 @@ def routes_serving_stop(request,stop):
     
 
 def single_predict(request,day,route,vnum,stopA,stopB,time):
-    
+    """
+    Gets estimated departure time from stopA, and estimated arrival time at stop B
+    """
     global network
     try:
         arrival_time,departure_time = network.quick_predict(int(day),str(route),int(vnum),str(stopA),str(stopB),int(time))
@@ -526,32 +559,17 @@ def closest_stops(request,lat,lon):
     return JsonResponse(resp,safe=False)
 
 #get user details
-def get_user_profile1(request):
-    username=request.user.username
-    user_id=request.user.id
-    user_points=Userpoints.objects.filter(user_id=user_id)
-    for user in user_points:
-        u_points=user.dublin_bus_points
-    users_max_points=Userpoints.objects.order_by('-dublin_bus_points')[:5]
-    leaderboard=[]
-    for user in users_max_points:
-        username_queryset=User.objects.filter(id=user.user_id_id)
-        
-        for user_in_queryset in username_queryset:
-            username_leaderboard=user_in_queryset.username 
-        leaderboard.append({'user': username_leaderboard, 'points':user.dublin_bus_points,'distance_travelled':user.distance_travelled_on_DublinBus})
-        
-    return JsonResponse({'username':username, 'points':u_points, 'leaderboard':leaderboard}, safe=False)
-
-
 def get_user_profile(request):
+    """
+    Get's details about the user's profile
+    """
     username=request.user.username
     user_id=request.user.id
     u_points=Userpoints.objects.get(user_id_id=user_id).dublin_bus_points
     if u_points==0:
         user_message="Use Dublin Bus to save the environment. "
     else:
-        user_message="Well Done for saving the planet"
+        user_message="Well Done for contributing in saving the planet. Keep using Dublin Bus!!"
     users_max_points=Userpoints.objects.order_by('-dublin_bus_points')[:5]
     print(users_max_points)
     leaderboard=[]
