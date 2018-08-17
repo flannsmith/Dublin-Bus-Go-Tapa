@@ -28,7 +28,7 @@ To test the APIs are correct move into the directory “/Dublin-Bus-Repo” and 
 ```
 python test_api.py
 ```
-To test that react is rendering all UI components correctly move into the directory “/ResearchPracticum/django” and run:
+To test that react is rendering all UI components correctly run:
 ```
 CI=true npm test
 ```
