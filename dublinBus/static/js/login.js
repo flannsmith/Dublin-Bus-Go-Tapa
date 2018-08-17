@@ -10,4 +10,4 @@ $("#go-back-login").click(function() {
 $(".close").click(function() {
     $(".error-message").hide();
 });
-    
+

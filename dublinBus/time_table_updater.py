@@ -45,10 +45,13 @@ if __name__ == '__main__':
                     pass
                 except:
                     pass
-            with open('static/timetabledump.bin','wb') as handle:
+            import os
+            BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            
+            with open(BASE_DIR+'/dublinBus/static/timetabledump.bin','wb') as handle:
                 pickle.dump(n.nodes,handle,protocol=pickle.HIGHEST_PROTOCOL)
             dt = datetime.datetime.now()
-            f = open('static/timetablelog.log','a')
+            f = open(BASE_DIR+'/dublinBus/static/timetablelog.log','a')
             f.write('Time tables dumped at ' + str(dt))
             f.close()  
             break

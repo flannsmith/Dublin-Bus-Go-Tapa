@@ -304,7 +304,7 @@ routeFinder(address, fromLocation){
   }
   
   let timeInSeconds = 0;
-  let dayOfWeek = null;
+  var dayOfWeek = null;
   //Block below is to get the current time of day in seconds from users device to be used in API call.
   if (fromLocation == true){
      let now = new Date();
@@ -315,7 +315,10 @@ routeFinder(address, fromLocation){
         0,0,0);
     const timeInMilliseconds = now.getTime() - midnight.getTime();
     timeInSeconds = timeInMilliseconds / 1000; // Slow can optimize this ^^, too many uneeded steps.
-    dayOfWeek = now.getDay();
+    dayOfWeek = now.getDay() -1;
+    if (dayOfWeek == -1){
+        dayOfWeek = 6
+    }
     dayOfWeek = dayOfWeek.toFixed(2);
   } else {
      let now = this.props.route.date;
@@ -328,11 +331,16 @@ routeFinder(address, fromLocation){
     timeInSeconds = timeInMilliseconds / 1000; // Slow can optimize this ^^, too many uneeded steps.
     timeInSeconds = timeInSeconds.toFixed(2);
     dayOfWeek = now.getDay();
+    dayOfWeek = dayOfWeek -1;
+    if (dayOfWeek == -1){
+        dayOfWeek = 6
+    }
     dayOfWeek = dayOfWeek.toFixed(2);
   }
 
   //let routeShape = {}; //holds all the direction objects
   let stops = []; //holds all markers for a route
+  console.log('/api/routefinder/'+originLat+'/'+originLng+'/'+destLat+'/'+destLng+'/'+dayOfWeek+'/'+timeInSeconds);
   fetch('/api/routefinder/'+originLat+'/'+originLng+'/'+destLat+'/'+destLng+'/'+dayOfWeek+'/'+timeInSeconds) //API call
     .then((response) => response.json())
     .then((responseJson) => {

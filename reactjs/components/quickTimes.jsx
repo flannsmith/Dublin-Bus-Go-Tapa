@@ -62,24 +62,26 @@ submit(event){
         0,0,0);
     const timeInMilliseconds = now.getTime() - midnight.getTime();
     let timeInSeconds = timeInMilliseconds / 1000;
-    console.log(timeInSeconds);
     
     let route = String(this.state.selected);
-    console.log(this.state.selected);
     let variation = this.state.variation.value;
     let start = this.state.selectedStartStop;
-    let end = this.state.selectedDestiantion;   
-    console.log("fetch('/api/predictor/'"+now.getDay()+"'/'"+route+"'/'"+variation+"'/'"+start+"'/'"+end+"'/'"+timeInSeconds+")");
-    fetch('/api/predictor/'+now.getDay()+'/'+route+'/'+variation+'/'+start+'/'+end+'/'+timeInSeconds) //API call
+    let end = this.state.selectedDestiantion;
+    let dayOfWeek = now.getDay() -1;
+    console.log(dayOfWeek);
+    if (dayOfWeek == -1){
+        dayOfWeek = 6
+    }
+    console.log('/api/predictor/'+dayOfWeek+'/'+route+'/'+variation+'/'+start+'/'+end+'/'+timeInSeconds);
+    fetch('/api/predictor/'+dayOfWeek+'/'+route+'/'+variation+'/'+start+'/'+end+'/'+timeInSeconds) //API call
     .then((response) => response.json())
     .then((responseJson) => {
-        console.log(responseJson);
+        console.log(dayOfWeek);
         if(responseJson["arrival time"]){
             let departureTime = responseJson["departure time"];
             let arrivalTime = responseJson["arrival time"];
             departureTime = departureTime.slice(0, 5);
             arrivalTime = arrivalTime.slice(0, 5);
-            console.log(arrivalTime);
             this.setState({
                 loading: false,
                 eta: departureTime,
@@ -105,8 +107,6 @@ handleDate(date){
 };
 
 _onSelect1(option) {
-    console.log("in onselect1")
-    console.log(option)
   this.setState({
     selected: option.value, 
     variationOpen: true, 
@@ -118,18 +118,14 @@ _onSelect1(option) {
 }
 
 fillVariations(option){
-  console.log("Entered fillVariations");
-  console.log(option);
   let variation = String(option.value);
   let options = [];
 
   fetch('/api/routeselection/routevariations/'+variation)
     .then((response) => response.json())
     .then((responseJson) => {
-          console.log(responseJson);
           let i = 0;
           responseJson.data[variation].map((variation) => {
-            console.log(variation);
             let item = { value: i, label: variation, className: 'list-group-item'};
             i++;
             options.push(item);
@@ -154,18 +150,12 @@ _onSelect2(option) {
 
 fillStartStops(option){
   let route = String(this.state.selected);
-  console.log("Entered startStops");
-  console.log(option);
   let stop = option.value;
   let options = [];
-  console.log(route);
-console.log(stop);
  fetch('/api/routeselection/routestops/'+route+'/'+stop)
     .then((response) => response.json())
     .then((responseJson) => {
-          console.log(responseJson);
           responseJson.map((variation) => {
-            console.log(variation);
             let item = { value: variation.id, label: variation.name, className: 'list-group-item' };
             options.push(item);
           });
@@ -189,16 +179,11 @@ _onSelect3(option) {
 
 fillEndStops(option){
   
-  console.log(this.state.rawStartStops);
-  console.log(option.value);
   let stopNumber = String(option.value);
   let index_of_start_stop = this.state.rawStartStops.findIndex((i) => i.id === stopNumber) + 1;
-  console.log(index_of_start_stop);
   let endStops = this.state.rawStartStops.slice(index_of_start_stop);
-  console.log(endStops);
   let options = [];
   endStops.map((stop) => {
-       console.log(stop);
        let item = { value: stop.id, label: stop.name, className: 'list-group-item' };
        options.push(item);
    });
@@ -230,7 +215,6 @@ getShapes(option){
  fetch('/api/routeselection/route_shape/'+route+'/'+variation+'/'+start+'/'+end)
     .then((response) => response.json())
     .then((responseJson) => {
-        console.log(responseJson);
         let startLat = responseJson.stops[0].lat;
         let startLng = responseJson.stops[0].lon;
         let destLat = responseJson.stops[1].lat;

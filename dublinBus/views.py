@@ -132,7 +132,6 @@ def get_route_variation(request,routename,v):
     """
     Unused
     """
-    print(routename,v)
     global network
     route = network.get_route(routename,variation=v)
     return JsonResponse(route,safe=False)
@@ -140,7 +139,6 @@ def get_route(request,routename):
     """
     Unused
     """
-    print(routename)
     global network
     routes = network.get_route(routename,all_variations=True)
     return JsonResponse(routes,safe=False)
@@ -193,7 +191,6 @@ def get_route_shape(request,routename,vari=0,api_response=True):
     if route == None:
         return JsonResponse({'error':'invalid route'},safe=False)
     route=[str(r) for r in route ][1:]
-    print(route)
     coords = []
     stops = []
     # for every stop in the route, add the stop to the stops array. Get the shape, and add it to the coordinates array
@@ -273,7 +270,6 @@ def login_view(request):
        if form.is_valid():
            user=form.get_user()
            login(request,user)
-           print(request.user.username)
            
            return redirect('dublinBus:home_page')
        else:
@@ -310,7 +306,6 @@ def logout_view(request):
     """
     Logs the user out and redirects them to the homepage
     """
-    print("in logout ", request.user)
     logout(request)
     #form=AuthenticationForm()
     #return redirect('dublinBus:login')
@@ -337,10 +332,9 @@ def user_favourites(request, loc_address, loc_name):
     """
     Unused
     """
-    print("in fav")
     #if request.user.is_authenticated:
     username=request.user
-    print(username)
+
     fav=UserFavourites(user_id=username, location_address=loc_address, location_name=loc_name)
     fav.save()
     return HttpResponse(status=200)
@@ -371,7 +365,6 @@ def user_location(request, origin_Lat, origin_Lon):
             #if it matches, save the user's location in the points database
             timeStamp = datetime.datetime.now()
             username=User.objects.get(id=str(request.user.id))
-            print(username)
             ulocation=Userlocation(user_id=username, user_lat=origin_Lat, user_lon=origin_Lon, insert_timestamp=timeStamp)
             ulocation.save()
             f=open('/data/nginxsucceslog','a')
@@ -412,7 +405,6 @@ def request_dublin_bus_points(request,lat,lon):
     Deprecated
     """
     ip = request.META.get('HTTP_X_FORWARDED_FOR')
-    print("ip address : ", ip)
     arr = ip.split('.')
     if arr[0] == '80' and arr[1] == '233' and arr[2] == '32':
         on_dublin_bus_wifi = True
@@ -494,7 +486,7 @@ def get_route_shape(request,route,variation,stopA,stopB,api_response=False):
     global network
     try:
         route_array = network.selector.routes[route][int(variation)][1:]
-        print(route_array)
+
         resp1=network.stop_getter.get_shape_route(stopA,stopB,route_array)
         stopA = network.stop_getter.get_stop_coords(str(stopA))
         stopB = network.stop_getter.get_stop_coords(str(stopB))
@@ -571,12 +563,10 @@ def get_user_profile(request):
     else:
         user_message="Well Done for contributing in saving the planet. Keep using Dublin Bus!!"
     users_max_points=Userpoints.objects.order_by('-dublin_bus_points')[:5]
-    print(users_max_points)
+
     leaderboard=[]
     for userid in users_max_points:
         username_leaderboard=User.objects.get(id=userid.user_id_id)
-        print("user", userid.id)
-        print(username_leaderboard)
         leaderboard.append({'user': username_leaderboard.username, 'points':userid.dublin_bus_points,'distance_travelled':userid.distance_travelled_on_DublinBus})
 
     return JsonResponse({'username':username, 'points':u_points, 'leaderboard':leaderboard, 'user_message': user_message}, safe=False)        

@@ -9,9 +9,3 @@ function goBackToSignin(){
 }
 
 
-$("#cancelbtn").on("click", function() {
-     console.log('Pinchado')
-
-// $("#cancelbtn").click(function(){
-//     $("#form-control.user-input").val('');
-// });
