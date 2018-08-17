@@ -5,9 +5,7 @@ The goal of the project was to produce a robust web application that can provide
 
 ### Prerequisites
 
-```
-This application has been built with python 3 and reactjs for a full list of required packages please refer to the requirements.txt file which contains all the modules needed for the successful deployment of the code. 
-```
+This application has been built with python 3 and reactjs for a full list of required packages please refer to the requirements.txt file which contains all the modules needed for the successful deployment of the code.
 
 ### Installing
 
