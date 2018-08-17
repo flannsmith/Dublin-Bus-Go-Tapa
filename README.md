@@ -24,17 +24,7 @@ python manage.py runserver
 
 ## Running the tests
 
-To test that the application is working you can run the following suite of tests.
-
-To test back end code move into the directory “/dbanalysis/dbanalysis/tests” and run:
-```
-python test.py
-```
-```
-python test2.py
-```
-
-To test the APIs are correct move into the directory “/ResearchPracticum” and run:
+To test the APIs are correct move into the directory “/Dublin-Bus-Repo” and run:
 ```
 python test_api.py
 ```
