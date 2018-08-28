@@ -42,9 +42,11 @@ CI=true npm test
 ## Authors
 
 * **Gavin Fitzgerald** - (GavinFitzgerald94)
-* **Linda Smith** - (Linda Smith)
+* **Diarmuid Morgan** - (Diarmuidmorgan)
 * **Manjunath Kulkarni** - (Manjunathsk92)
 * **Linda Smith** - (flannsmith)
+
+Multiple developers collaborated on some of the commits in this repository in the same virtual machine environment therefore the author names in the Git history may not give an accurate representation of each developer's contribution.
 
 ## License
 
