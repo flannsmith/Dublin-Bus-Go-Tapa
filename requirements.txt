@@ -42,7 +42,7 @@ datashape==0.5.4
 -e git+https://github.com/Manjunathsk92/dbanalysis.git@0a554f53f373876115837d3dbf33647f87ea7487#egg=dbanalysis
 decorator==4.3.0
 distributed==1.21.8
-Django==2.0.6
+Django==2.2.10
 django-rest-knox==3.1.5
 django-webpack-loader==0.6.0
 djangorestframework==3.8.2
